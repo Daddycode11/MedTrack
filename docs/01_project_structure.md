@@ -33,7 +33,7 @@ Within the `medtrack/` directory, you will find folders for each application in 
 At the root of the `medtrack/` directory, you will also find the following files:
 - `manage.py`: This file is a command-line utility that allows administrators to interact with the Django project. It provides commands for deploying, testing, and managing the project.
 - `requirements.txt`: This file lists the Python packages required to run the project. It is used to install dependencies using pip.
-- `db.sqlite3`: This file is the default SQLite database for the project and will be created automatically when the project is initialized. It stores all the data for the project, including user accounts, medication records, and other information.
+- `db.sqlite3`: This file is the default SQLite database for the project and will be created automatically when the project is initialized. It stores all the data for the project, including user accounts, medication records, and other information. To facilitate the demonstration of the project, a set of initial data is provided that can be loaded into the database by using the `initialize` functionality. This is defined in the `medtrack/management/commands/initialize.py` file and relies on the scripts available at the `medtrack/utils/initialization/` folder.
 
 ### What is MVT?
 
