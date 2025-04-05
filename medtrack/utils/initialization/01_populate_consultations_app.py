@@ -1,4 +1,4 @@
-# PART1: MEDICAL SPECIALTIES
+# PART 1: MEDICAL SPECIALTIES
 
 from consultations.models import MedicalSpecialty
 
@@ -28,16 +28,17 @@ for specialty_data in medical_specialties:
         print(f"Added medical specialty: {specialty.name}")
     else:
         print(f"Medical specialty already exists: {specialty.name}")
-# This script populates the MedicalSpecialty model with predefined data.
 
 
 # PART 2: PHYSICIANS
 
 from consultations.models import Physician
+from django.contrib.auth.models import User
 
 # Suggested physicians
 physicians = [
     {
+        "username": "johnbaker",
         "first_name": "John",
         "last_name": "Baker",
         "employee_type": "full_time",
@@ -47,6 +48,7 @@ physicians = [
         "address": "123 Main St, Springfield"
     },
     {
+        "username": "alicecooper",
         "first_name": "Alice",
         "last_name": "Cooper",
         "employee_type": "part_time",
@@ -56,6 +58,7 @@ physicians = [
         "address": "456 Elm St, Springfield"
     },
     {
+        "username": "robertmiller",
         "first_name": "Robert",
         "last_name": "Miller",
         "employee_type": "full_time",
@@ -65,6 +68,7 @@ physicians = [
         "address": "789 Oak St, Springfield"
     },
     {
+        "username": "jessicaadams",
         "first_name": "Jessica",
         "last_name": "Adams",
         "employee_type": "contract",
@@ -74,6 +78,7 @@ physicians = [
         "address": "321 Pine St, Springfield"
     },
     {
+        "username": "williamclark",
         "first_name": "William",
         "last_name": "Clark",
         "employee_type": "full_time",
@@ -83,6 +88,7 @@ physicians = [
         "address": "654 Maple St, Springfield"
     },
     {
+        "username": "sophiaturner",
         "first_name": "Sophia",
         "last_name": "Turner",
         "employee_type": "part_time",
@@ -96,24 +102,38 @@ physicians = [
 # Delete existing records
 Physician.objects.all().delete()
 
-# Populate the database
 for physician_data in physicians:
+    user, created = User.objects.get_or_create(
+        username=physician_data["username"],
+        defaults={
+            "first_name": physician_data["first_name"],
+            "last_name": physician_data["last_name"],
+            "email": physician_data["email"]
+        }
+    )
+    user.set_password("defaultpassword")  # Set a default password
+    user.save()  # Save the user instance
+    if created:
+        print(f"Added User profile: {user.username}")
+    else:
+        print(f"User profile already exists: {user.username}")
+
+    # Create Physician
     physician, created = Physician.objects.get_or_create(
-        first_name=physician_data["first_name"],
-        last_name=physician_data["last_name"],
+        username=user,
         defaults={
             "employee_type": physician_data["employee_type"],
             "specialty": physician_data["specialty"],
             "phone_number": physician_data["phone_number"],
-            "email": physician_data["email"],
             "address": physician_data["address"],
         }
     )
-    if created:
-        print(f"Added physician: {physician.first_name} {physician.last_name}")
-    else:
-        print(f"Physician already exists: {physician.first_name} {physician.last_name}")
 
+    if created:
+        print(f"Added Physician profile for: {physician.username}")
+        physician.save()  # Save the Physician instance
+    else:
+        print(f"Physician profile already exists for: {physician.username}")
 
 # PART 3: CONSULTATION REASONS
 from consultations.models import ConsultationReason
@@ -172,7 +192,6 @@ for location_data in consultation_locations:
     else:
         print(f"Consultation location already exists: {location.room_number}")
 
-# This script populates the ConsultationLocation model with predefined data.
 
 # PART 5: CONSULTATIONS
 from pdl.models import PDLProfile
@@ -182,16 +201,27 @@ from datetime import datetime, timedelta
 # Suggested consultations
 consultations = [
     {
-        "physician": Physician.objects.get(first_name="John", last_name="Baker"),
-        "pdl_profile": PDLProfile.objects.get(first_name="John", last_name="Doe"),
+        "physician": Physician.objects.get(username=User.objects.get(username="johnbaker")),
+        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="johndoe")), # Make sure to create a PDLProfile for this user or run this after 00_populate_pdl_profiles.py
         "location": ConsultationLocation.objects.get(room_number="RM101"),
         "reason": ConsultationReason.objects.get(reason="Routine Checkup"),
         "status": "scheduled",
         "consultation_date_date_only": (datetime.now() + timedelta(days=1)).date(),
         "consultation_time_block": "BLOCK_01",
         "notes": "Routine checkup for general health.",
+    },
+     {
+        "physician": Physician.objects.get(username=User.objects.get(username="alicecooper")),
+        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="johndoe")), # Make sure to create a PDLProfile for this user or run this after 00_populate_pdl_profiles.py
+        "location": ConsultationLocation.objects.get(room_number="RM102"),
+        "reason": ConsultationReason.objects.get(reason="Routine Checkup"),
+        "status": "scheduled",
+        "consultation_date_date_only": (datetime.now() + timedelta(days=1)).date(),
+        "consultation_time_block": "BLOCK_06",
+        "notes": "Routine checkup for general health.",
     }
 ]
+
 
 # Delete existing records
 Consultation.objects.all().delete()
