@@ -136,9 +136,12 @@ class ConsultationModelTest(TestCase):
         self.assertEqual(self.consultation.notes, "Patient has mild symptoms.")
 
     def test_consultation_str(self):
+        block_name = self.consultation.consultation_time_block
+        block_value = ConsultationTimeBlock[block_name].value[1]
         self.assertEqual(
             str(self.consultation),
-            f"Consultation with {self.physician} on 2025-04-05"
+            f"Consultation with {self.physician} on {self.consultation.consultation_date_date_only.strftime('%d %B %Y')} at {block_value} in {self.location.room_number}"
+
         )
 
     def test_unique_constraints(self):
