@@ -8,6 +8,7 @@ from .models import (
     Consultation,
     ConsultationTimeBlock,
 )
+import datetime as dt
 from pdl.models import PDLProfile  # Ensure this is correctly imported or mocked
 
 class MedicalSpecialtyModelTest(TestCase):
@@ -91,14 +92,20 @@ class ConsultationModelTest(TestCase):
         )
         self.location = ConsultationLocation.objects.create(room_number="202", capacity=5)
         self.reason = ConsultationReason.objects.create(reason="Skin Rash", description="Consultation for skin rash.")
-        self.pdl_profile = PDLProfile.objects.create(name="Test PDL")  # Replace with actual fields for PDLProfile
+        self.pdl_profile = PDLProfile.objects.create(
+            first_name="Jane",
+            last_name="Doe",
+            email="janedoe@example.com",
+            phone_number="5551234567"
+        )
+                                    
         self.consultation = Consultation.objects.create(
             pdl_profile=self.pdl_profile,
             physician=self.physician,
             location=self.location,
             reason=self.reason,
             status="scheduled",
-            consultation_date_date_only="2025-04-05",
+            consultation_date_date_only=dt.datetime(2025, 4, 5),
             consultation_time_block=ConsultationTimeBlock.BLOCK_17.name,
             is_an_emergency=False,
             notes="Patient has mild symptoms."
