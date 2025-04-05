@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}
+Consultation Calendar
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="h3 text-center">Consultation Calendar - {{ month_name }} {{ year }}</h1>
+    <div class="d-flex justify-content-between mb-3">
+        <a href="?month={{ prev_month }}&year={{ prev_year }}" class="btn btn-outline-primary">&laquo; Previous</a>
+        <a href="?month={{ next_month }}&year={{ next_year }}" class="btn btn-outline-primary">Next &raquo;</a>
+    </div>
+
+    <div class="table">
+        <table class="table table-bordered ">
+            <thead>
+                <tr>
+                    <th>Monday</th>
+                    <th>Tuesday</th>
+                    <th>Wednesday</th>
+                    <th>Thursday</th>
+                    <th>Friday</th>
+                    <th>Saturday</th>
+                    <th>Sunday</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                {% for week in calendar_data|slice:7 %}
+                <tr>
+                    {% for day in week %}
+                    <td class="{% if not day.day %}bg-secondary opacity-50{% endif %}">
+                        {% if day.day %}
+                        <h5 class="fw-semibold">{{ day.day }}</h5>
+                        <div>
+                            {% if day.consultations %}
+                                {% for consultation in day.consultations %}
+                                <div class="card p-2 small p-2 mb-2 ">
+                                    <strong>{{ consultation.consultation_time_block_display }}</strong> {{ consultation.pdl_profile }}
+                                    <span class="d-block text-muted small"> {{ consultation.location }} | {{ consultation.physician }} </span>
+                                    {% if consultation.status != "canceled" %}
+                                    <span class="text-success"><i class="bi bi-circle-fill small pe-2"></i>{{ consultation.status|capfirst }}</span>
+                                    {% else %}
+                                    <span class="text-danger"><i class="bi bi-circle-fill small pe-2"></i>{{ consultation.status|capfirst }}</span>
+
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="small text-muted">No consultations scheduled.</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

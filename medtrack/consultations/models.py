@@ -148,6 +148,14 @@ class Consultation(models.Model):
         block_name = self.consultation_time_block
         block_value = ConsultationTimeBlock[block_name].value[1]
         return f"Consultation with {self.physician} on {self.consultation_date_date_only.strftime('%d %B %Y')} at {block_value} in {self.location.room_number}"
+    
+    @property
+    def consultation_time_block_display(self):
+        """
+        Returns the display value of the consultation time block.
+        """
+        return ConsultationTimeBlock[self.consultation_time_block].value[1]
+    
     class Meta:
         verbose_name = "Consultation"
         verbose_name_plural = "Consultations"
