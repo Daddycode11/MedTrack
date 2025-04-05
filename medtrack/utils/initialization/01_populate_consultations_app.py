@@ -1,0 +1,216 @@
+# PART1: MEDICAL SPECIALTIES
+
+from consultations.models import MedicalSpecialty
+
+# Suggested medical specialties
+medical_specialties = [
+    {"name": "Cardiology", "description": "Study and treatment of heart conditions."},
+    {"name": "Dermatology", "description": "Study and treatment of skin conditions."},
+    {"name": "Neurology", "description": "Study and treatment of nervous system disorders."},
+    {"name": "Pediatrics", "description": "Medical care for infants, children, and adolescents."},
+    {"name": "Psychiatry", "description": "Study and treatment of mental health disorders."},
+    {"name": "Orthopedics", "description": "Study and treatment of musculoskeletal system."},
+    {"name": "Oncology", "description": "Study and treatment of cancer."},
+    {"name": "Gastroenterology", "description": "Study and treatment of digestive system disorders."},
+    {"name": "Endocrinology", "description": "Study and treatment of hormonal disorders."},
+    {"name": "Ophthalmology", "description": "Study and treatment of eye disorders."},
+]
+
+# Delete existing records
+MedicalSpecialty.objects.all().delete()
+# Populate the database
+for specialty_data in medical_specialties:
+    specialty, created = MedicalSpecialty.objects.get_or_create(
+        name=specialty_data["name"],
+        defaults={"description": specialty_data["description"]}
+    )
+    if created:
+        print(f"Added medical specialty: {specialty.name}")
+    else:
+        print(f"Medical specialty already exists: {specialty.name}")
+# This script populates the MedicalSpecialty model with predefined data.
+
+
+# PART 2: PHYSICIANS
+
+from consultations.models import Physician
+
+# Suggested physicians
+physicians = [
+    {
+        "first_name": "John",
+        "last_name": "Baker",
+        "employee_type": "full_time",
+        "specialty": MedicalSpecialty.objects.get(name="Cardiology"),
+        "phone_number": "555-1234",
+        "email": "johnbaker@email.com",
+        "address": "123 Main St, Springfield"
+    },
+    {
+        "first_name": "Alice",
+        "last_name": "Cooper",
+        "employee_type": "part_time",
+        "specialty": MedicalSpecialty.objects.get(name="Dermatology"),
+        "phone_number": "555-5678",
+        "email": "alicecooper@email.com",
+        "address": "456 Elm St, Springfield"
+    },
+    {
+        "first_name": "Robert",
+        "last_name": "Miller",
+        "employee_type": "full_time",
+        "specialty": MedicalSpecialty.objects.get(name="Neurology"),
+        "phone_number": "555-8765",
+        "email": "robertmiller@email.com",
+        "address": "789 Oak St, Springfield"
+    },
+    {
+        "first_name": "Jessica",
+        "last_name": "Adams",
+        "employee_type": "contract",
+        "specialty": MedicalSpecialty.objects.get(name="Pediatrics"),
+        "phone_number": "555-4321",
+        "email": "jessicaadams@email.com",
+        "address": "321 Pine St, Springfield"
+    },
+    {
+        "first_name": "William",
+        "last_name": "Clark",
+        "employee_type": "full_time",
+        "specialty": MedicalSpecialty.objects.get(name="Psychiatry"),
+        "phone_number": "555-6789",
+        "email": "williamclark@email.com",
+        "address": "654 Maple St, Springfield"
+    },
+    {
+        "first_name": "Sophia",
+        "last_name": "Turner",
+        "employee_type": "part_time",
+        "specialty": MedicalSpecialty.objects.get(name="Orthopedics"),
+        "phone_number": "555-9876",
+        "email": "sophiaturner@email.com",
+        "address": "987 Birch St, Springfield"
+    }
+]
+
+# Delete existing records
+Physician.objects.all().delete()
+
+# Populate the database
+for physician_data in physicians:
+    physician, created = Physician.objects.get_or_create(
+        first_name=physician_data["first_name"],
+        last_name=physician_data["last_name"],
+        defaults={
+            "employee_type": physician_data["employee_type"],
+            "specialty": physician_data["specialty"],
+            "phone_number": physician_data["phone_number"],
+            "email": physician_data["email"],
+            "address": physician_data["address"],
+        }
+    )
+    if created:
+        print(f"Added physician: {physician.first_name} {physician.last_name}")
+    else:
+        print(f"Physician already exists: {physician.first_name} {physician.last_name}")
+
+
+# PART 3: CONSULTATION REASONS
+from consultations.models import ConsultationReason
+
+# Suggested consultation reasons
+consultation_reasons = [
+    {"reason": "Routine Checkup", "description": "General health checkup."},
+    {"reason": "Follow-up Visit", "description": "Follow-up on previous condition."},
+    {"reason": "Emergency Consultation", "description": "Immediate medical attention required."},
+    {"reason": "Specialist Referral", "description": "Referral to a specialist."},
+    {"reason": "Medication Review", "description": "Review of current medications."},
+]
+
+# Delete existing records
+ConsultationReason.objects.all().delete()
+
+# Populate the database
+for reason_data in consultation_reasons:
+    reason, created = ConsultationReason.objects.get_or_create(
+        reason=reason_data["reason"],
+        defaults={"description": reason_data["description"]}
+    )
+    if created:
+        print(f"Added consultation reason: {reason.reason}")
+    else:
+        print(f"Consultation reason already exists: {reason.reason}")
+
+
+# PART 4: CONSULTATION LOCATIONS
+from consultations.models import ConsultationLocation
+
+# Suggested consultation locations
+consultation_locations = [
+    {"room_number": "RM101", "capacity": 2},
+    {"room_number": "RM102", "capacity": 4},
+    {"room_number": "RM103", "capacity": 3},
+    {"room_number": "RM104", "capacity": 5},
+    {"room_number": "RM105", "capacity": 6},
+    {"room_number": "RM201", "capacity": 2},
+    {"room_number": "RM202", "capacity": 4},
+    {"room_number": "RM203", "capacity": 3},
+    {"room_number": "RM204", "capacity": 5},
+    {"room_number": "RM205", "capacity": 6}
+]
+
+# Delete existing records
+ConsultationLocation.objects.all().delete()
+# Populate the database
+for location_data in consultation_locations:
+    location, created = ConsultationLocation.objects.get_or_create(
+        room_number=location_data["room_number"],
+        defaults={"capacity": location_data["capacity"]}
+    )
+    if created:
+        print(f"Added consultation location: {location.room_number}")
+    else:
+        print(f"Consultation location already exists: {location.room_number}")
+
+# This script populates the ConsultationLocation model with predefined data.
+
+# PART 5: CONSULTATIONS
+from pdl.models import PDLProfile
+from consultations.models import Consultation
+from datetime import datetime, timedelta
+
+# Suggested consultations
+consultations = [
+    {
+        "physician": Physician.objects.get(first_name="John", last_name="Baker"),
+        "pdl_profile": PDLProfile.objects.get(first_name="John", last_name="Doe"),
+        "location": ConsultationLocation.objects.get(room_number="RM101"),
+        "reason": ConsultationReason.objects.get(reason="Routine Checkup"),
+        "status": "scheduled",
+        "consultation_date_date_only": (datetime.now() + timedelta(days=1)).date(),
+        "consultation_time_block": "BLOCK_01",
+        "notes": "Routine checkup for general health.",
+    }
+]
+
+# Delete existing records
+Consultation.objects.all().delete()
+
+# Populate the database
+for consultation_data in consultations:
+    consultation, created = Consultation.objects.get_or_create(
+        physician=consultation_data["physician"],
+        pdl_profile=consultation_data["pdl_profile"],
+        location=consultation_data["location"],
+        reason=consultation_data["reason"],
+        status=consultation_data["status"],
+        consultation_date_date_only=consultation_data["consultation_date_date_only"],
+        consultation_time_block=consultation_data["consultation_time_block"],
+        defaults={
+            "notes": consultation_data["notes"]
+        }
+    )
+    if created:
+        print(f"Added consultation: {consultation} with ID {consultation.id}")
+    else:
+        print(f"Consultation already exists: {consultation}")

@@ -1,6 +1,7 @@
 import os
 from django.core.management.base import BaseCommand
 from importlib.util import spec_from_file_location, module_from_spec
+from django.db import connection
 
 class Command(BaseCommand):
     help = "Run all initialization scripts in the utils/initialization folder"
@@ -19,6 +20,9 @@ class Command(BaseCommand):
             f for f in os.listdir(initialization_folder)
             if f.endswith(".py") and not f.startswith("__")
         ]
+        
+        # Order scripts by filename to ensure consistent execution order
+        scripts.sort()
 
         if not scripts:
             self.stdout.write(self.style.WARNING("No initialization scripts found."))
@@ -32,6 +36,7 @@ class Command(BaseCommand):
                 spec = spec_from_file_location("module.name", script_path)
                 module = module_from_spec(spec)
                 spec.loader.exec_module(module)
+                connection.commit()
                 self.stdout.write(self.style.SUCCESS(f"Successfully ran: {script}"))
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Error running {script}: {e}"))
