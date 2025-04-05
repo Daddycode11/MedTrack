@@ -79,6 +79,27 @@ class ConsultationReasonModelTest(TestCase):
 
 
 class ConsultationModelTest(TestCase):
+    """
+    Unit tests for the Consultation model.
+    This test case verifies the functionality and constraints of the Consultation model, 
+    including its relationships, string representation, and unique constraints.
+    Classes:
+        ConsultationModelTest: Test case for the Consultation model.
+    Methods:
+        setUp:
+            Sets up the test environment by creating instances of related models 
+            (MedicalSpecialty, Physician, ConsultationLocation, ConsultationReason, PDLProfile) 
+            and a Consultation instance for testing.
+        test_consultation_creation:
+            Tests the creation of a Consultation instance and verifies that its fields 
+            are correctly set.
+        test_consultation_str:
+            Tests the string representation of a Consultation instance.
+        test_unique_constraints:
+            Tests the unique constraint on the Consultation model to ensure that duplicate 
+            consultations for the same PDLProfile, physician, location, date, and time block 
+            cannot be created.
+    """
     def setUp(self):
         self.specialty = MedicalSpecialty.objects.create(name="Dermatology", description="Skin-related specialty.")
         self.physician = Physician.objects.create(

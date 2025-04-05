@@ -1,4 +1,6 @@
 from django.db import models
+# User model
+from django.contrib.auth.models import User
 
 # Create your models here.
 class MedicalSpecialty(models.Model):
@@ -26,20 +28,18 @@ class Physician(models.Model):
         ('contract', 'Contract'),
     ]
 
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    username = models.ForeignKey(User, on_delete=models.CASCADE)
     employee_type = models.CharField(max_length=20, choices=EMPLOYEE_TYPE_CHOICES, default='full_time')
     specialty = models.ForeignKey(MedicalSpecialty, on_delete=models.CASCADE)
     phone_number = models.CharField(max_length=15)
-    email = models.EmailField()
     address = models.CharField(max_length=255)
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.specialty})"
+        return f"{self.username.first_name} {self.username.last_name} ({self.specialty})"
     class Meta:
         verbose_name = "Physician"
         verbose_name_plural = "Physicians"
-        ordering = ['last_name']
+        ordering = ['username__last_name']
 
 
 class ConsultationLocation(models.Model):

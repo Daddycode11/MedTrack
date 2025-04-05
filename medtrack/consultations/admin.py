@@ -17,16 +17,16 @@ class MedicalSpecialtyAdmin(admin.ModelAdmin):
 
 @admin.register(Physician)
 class PhysicianAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'employee_type', 'specialty', 'phone_number', 'email')
-    search_fields = ('first_name', 'last_name', 'email')
-    ordering = ('last_name',)
+    list_display = ('username__first_name', 'username__last_name', 'employee_type', 'specialty', 'phone_number')
+    search_fields = ('username__first_name', 'username__last_name')
+    ordering = ('username__last_name',)
     list_filter = ('employee_type', 'specialty')
     fieldsets = (
         (None, {
-            'fields': ('first_name', 'last_name', 'employee_type', 'specialty')
+            'fields': ('username', 'employee_type', 'specialty')
         }),
         ('Contact Information', {
-            'fields': ('phone_number', 'email')
+            'fields': ('phone_number',)
         }),
         ('Address Information', {
             'fields': ('address',)
@@ -63,9 +63,9 @@ class ConsultationAdmin(admin.ModelAdmin):
         'is_an_emergency',
     )
     search_fields = (
-        'pdl_profile__first_name',
-        'pdl_profile__last_name',
-        'physician__first_name',
-        'physician__last_name',
+        'pdl_profile__username__first_name',
+        'pdl_profile__username__last_name',
+        'physician__username__first_name',
+        'physician__username__last_name',
     )
     list_filter = ('status', 'is_an_emergency', 'consultation_date_date_only', 'consultation_time_block')

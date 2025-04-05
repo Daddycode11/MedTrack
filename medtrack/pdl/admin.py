@@ -20,17 +20,17 @@ class DetentionStatusAdmin(admin.ModelAdmin):
 
 @admin.register(PDLProfile)
 class PDLProfileAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'email', 'phone_number')
-    search_fields = ('first_name', 'last_name', 'email')
-    list_filter = ('first_name',)
-    ordering = ('last_name',)
+    list_display = ('username__first_name', 'username__last_name', 'phone_number')
+    search_fields = ('username__first_name', 'username__last_name')
+    list_filter = ('username__first_name',)
+    ordering = ('username__last_name',)
     fieldsets = (
         (None, {
-            'fields': ('first_name', 'last_name', 'email', 'phone_number')
+            'fields': ('username', 'phone_number')
         }),
     )
     list_per_page = 10
-    list_display_links = ('first_name',)
+    list_display_links = ('username__first_name',)
 
 @admin.register(DetentionReason)
 class DetentionReasonAdmin(admin.ModelAdmin):
@@ -49,7 +49,7 @@ class DetentionReasonAdmin(admin.ModelAdmin):
 @admin.register(DetentionInstance)
 class DetentionInstanceAdmin(admin.ModelAdmin):
     list_display = ('pdl_profile', 'detention_status', 'detention_start_date', 'detention_end_date', 'detention_reason')
-    search_fields = ('pdl_profile__first_name', 'pdl_profile__last_name', 'detention_status__status', 'detention_reason__reason')
+    search_fields = ('pdl_profile__username__first_name', 'pdl_profile__username__last_name', 'detention_status__status', 'detention_reason__reason')
     list_filter = ('detention_status', 'detention_reason')
     ordering = ('-detention_start_date',)
     fieldsets = (
