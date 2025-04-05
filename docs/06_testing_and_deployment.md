@@ -140,4 +140,51 @@ Ran 13 tests in 0.006s
 OK
 Destroying test database for alias 'default'...
 ```
+#### Medications
+
+The following unit tests are implemented in the `medications` application, found under `medications/tests.py`:
+
+1. **Pharmacist**:
+   - `test_pharmacist_creation`: Verifies that a `Pharmacist` instance is created with the correct attributes, including `username`, `phone_number`, and `address`.
+   - `test_pharmacist_str`: Ensures the `__str__` method returns the correct string representation of the pharmacist.
+
+2. **MedicationType**:
+   - `test_medication_type_creation`: Verifies that a `MedicationType` instance is created with the correct name.
+   - `test_medication_type_str`: Ensures the `__str__` method returns the correct string representation of the medication type.
+
+3. **MedicationGenericName**:
+   - `test_generic_name_creation`: Verifies that a `MedicationGenericName` instance is created with the correct attributes, including the relationship to a `MedicationType`.
+   - `test_generic_name_str`: Ensures the `__str__` method returns the correct string representation of the generic name.
+
+4. **Medication**:
+   - `test_medication_creation`: Verifies that a `Medication` instance is created with the correct attributes, including relationships to `MedicationGenericName` and other fields like `dosage_form`, `strength`, and `manufacturer`.
+   - `test_medication_str`: Ensures the `__str__` method returns the correct string representation of the medication.
+
+5. **MedicationInventory**:
+   - `test_inventory_creation`: Verifies that a `MedicationInventory` instance is created with the correct attributes, including the relationship to a `Medication`, `quantity`, `expiration_date`, and `location`.
+   - `test_inventory_str`: Ensures the `__str__` method returns the correct string representation of the inventory.
+
+6. **MedicationPrescription**:
+   - `test_prescription_creation`: Verifies that a `MedicationPrescription` instance is created with the correct attributes, including relationships to `PDLProfile`, `Medication`, and `Physician`, as well as fields like `dosage`, `frequency`, and `duration`.
+   - `test_prescription_str`: Ensures the `__str__` method returns the correct string representation of the prescription.
+
+To run the unit tests for the `medications` app, use the following command:
+
+```bash
+python manage.py test medications
+```
+
+The result should look like this:
+
+```bash
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+..................
+----------------------------------------------------------------------
+Ran 18 tests in 0.012s
+
+OK
+Destroying test database for alias 'default'...
+```
+
 
