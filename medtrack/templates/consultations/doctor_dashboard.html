@@ -10,36 +10,69 @@ Doctor Dashboard
     <div class="row">
         <!-- Left Column: Doctor Profile -->
         <div class="col-md-4">
-            <div class="card shadow h-100">
+            <div class="card shadow h-100 px-4 py-2">
                 <div class="card-body">
-                    <h4 class="card-title">Doctor Profile</h4>
-                    <p><strong>Name:</strong> {{ physician.username.first_name }} {{ physician.username.last_name }}</p>
-                    <p><strong>Email:</strong> {{ physician.username.email }}</p>
-                    <p><strong>Phone:</strong> {{ physician.phone_number }}</p>
-                    <p><strong>Specialty:</strong> {{ physician.specialty.name }}</p>
-                    <p><strong>Address:</strong> {{ physician.address }}</p>
+                    <h4 class="card-title mb-4">Doctor Profile</h4>
+                    <p class="mb-3">
+                        <i class="bi bi-person-circle pe-2"></i>
+                        <strong>Name:</strong> {{ physician.username.first_name }} {{ physician.username.last_name }}
+                    </p>
+                    <p class="mb-3">
+                        <i class="bi bi-envelope pe-2"></i>
+                        <strong>Email:</strong> {{ physician.username.email }}
+                    </p>
+                    <p class="mb-3">
+                        <i class="bi bi-telephone pe-2"></i>
+                        <strong>Phone:</strong> {{ physician.phone_number }}
+                    </p>
+                    <p class="mb-3">
+                        <i class="bi bi-briefcase pe-2"></i>
+                        <strong>Specialty:</strong> {{ physician.specialty.name }}
+                    </p>
+                    <p class="mb-3">
+                        <i class="bi bi-geo-alt pe-2"></i>
+                        <strong>Address:</strong> {{ physician.address }}
+                    </p>
                 </div>
             </div>
         </div>
 
-        <!-- Right Column: Links -->
+        <!-- Right Column: Links and Upcoming Consultations -->
         <div class="col-md-8">
-            <div class="card shadow h-100">
+            <div class="card shadow h-100 px-4 py-2">
                 <div class="card-body">
-                    <h4 class="card-title">Quick Links</h4>
-                    <ul class="list-group">
-                        <li class="list-group-item">
-                            <a href="{% url 'consultations:consultation_calendar_physician' physician.id %}"
-                            class="text-decoration-none">
-                                <i class="bi bi-calendar-event pe-2"></i> View Consultation Calendar
+                    <h4 class="card-title mb-4">Quick Links</h4>
+                    <ul class="list-group mb-4">
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-calendar-event pe-2"></i>
+                            <a href="{% url 'consultations:consultation_calendar_physician' physician.id %}" class="text-decoration-none">
+                                View Consultation Calendar
                             </a>
                         </li>
-                        <li class="list-group-item">
-                            <a href="#" class="text-decoration-none">
-                                <i class="bi bi-capsule pe-2"></i> View Medication List
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-capsule pe-2"></i>
+                            <a href="{% url 'medications:medication_list' %}" class="text-decoration-none">
+                                View Medication List
                             </a>
                         </li>
                     </ul>
+
+                    <h4 class="card-title mb-4">Upcoming Consultations</h4>
+                    {% if upcoming_consultations %}
+                        <ul class="list-group">
+                            {% for consultation in upcoming_consultations %}
+                            <li class="list-group-item">
+                                <strong>{{ consultation.consultation_date_date_only }}</strong> - 
+                                {{ consultation.consultation_time_block_display }}<br>
+                                <span class="text-muted small">
+                                    {{ consultation.pdl_profile }} | {{ consultation.location.room_number }}
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No upcoming consultations.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>

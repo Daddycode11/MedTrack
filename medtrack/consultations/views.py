@@ -93,17 +93,27 @@ def consultations_by_physician(request, physician_id):
 
     # Render the template
     return render(request, "consultations/consultation_calendar.html", context)
+from datetime import date
+from django.shortcuts import render, get_object_or_404
+from .models import Physician, Consultation
 
 def doctor_dashboard(request):
     """
     View function to display the doctor's dashboard.
     """
-    # Emulate view by fetching  'jessicaadams' physician
-
+    # Emulate view by fetching 'jessicaadams' physician
     physician = get_object_or_404(Physician, username__username='jessicaadams')
 
+    # Fetch the next three upcoming consultations for the physician
+    upcoming_consultations = Consultation.objects.filter(
+        physician=physician,
+        consultation_date_date_only__gte=date.today(),
+        status="scheduled"
+    ).order_by('consultation_date_date_only', 'consultation_time_block')[:3]
+
     context = {
-        'physician': physician
+        'physician': physician,
+        'upcoming_consultations': upcoming_consultations,
     }
 
     # Render the template

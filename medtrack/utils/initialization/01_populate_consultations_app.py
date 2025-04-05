@@ -233,7 +233,7 @@ consultations = [
         "notes": "Follow-up on previous condition.",
     },
     {
-        "physician": Physician.objects.get(username=User.objects.get(username="robertmiller")),
+        "physician": Physician.objects.get(username=User.objects.get(username="jessicaadams")),
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="lauragarcia")), # Make sure to create a PDLProfile for this user or run this after 00_populate_pdl_profiles.py
         "location": ConsultationLocation.objects.get(room_number="RM103"),
         "reason": ConsultationReason.objects.get(reason="Follow-up Visit"),

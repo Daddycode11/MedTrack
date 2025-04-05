@@ -9,8 +9,8 @@ PDL Profile - {{ pdl.pdl_profile }}
     <h1 class="h3">PDL Profile</h1>
     <div class="row d-flex align-items-stretch">
         <div class="col-md-4 mb-3">
-            <div class="card px-5 py-5 shadow border-0 h-100">
-                <h2>Personal Information</h2>
+            <div class="card px-5 py-5 shadow  h-100">
+                <h4>Personal Information</h4>
                 <p><strong>Name:</strong> {{ pdl.pdl_profile }}</p>
                 <p><strong>ID:</strong> {{ pdl.id }}</p>
                 <p><strong>Detention Status:</strong> {{ pdl.detention_status }}</p>
@@ -19,11 +19,12 @@ PDL Profile - {{ pdl.pdl_profile }}
             </div>
         </div>
         <div class="col-md-4 mb-3">
-            <div class="card px-5 py-5 shadow border-0 h-100">
-                <h2 class="pb-3">
+            <div class="card px-5 py-5 shadow  h-100">
+                <h4 class="pb-4">
                     <i class="bi bi-journal-medical pe-1"></i>
-                    Consultations</h2>
-                </h2>
+                    Consultations
+                </h4>
+
                 {% for consultation in consultations %}
                    <p class=" border-bottom pb-2">
                     {{ consultation }}
@@ -33,12 +34,16 @@ PDL Profile - {{ pdl.pdl_profile }}
             </div>
         </div>
         <div class="col-md-4 mb-3">
-            <div class="card px-5 py-5 shadow border-0 h-100">
-                <h2>
+            <div class="card px-5 py-5 shadow  h-100">
+                <h4 class="pb-4">
                     <i class="bi bi-capsule pe-1"></i>
-                    Medications</h2>
-                <p><strong>Phone Number:</strong> {{ pdl.phone_number }}</p>
-                <p><strong>Other Details:</strong> Placeholder for additional information.</p>
+                    Medications</h4>
+
+                {% for prescription in prescriptions %}
+                    <p class=" border-bottom pb-2">
+                        {{ prescription }}
+                    </p>
+                {% endfor %}
             </div>
         </div>
     </div>
