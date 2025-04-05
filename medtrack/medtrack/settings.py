@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'pdl',
     'consultations',
     'medications',
+    'django_filters',
+    'widget_tweaks',  # For better form rendering
 ]
 
 MIDDLEWARE = [
