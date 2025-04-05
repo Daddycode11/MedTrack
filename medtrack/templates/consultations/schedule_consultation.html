@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+
+{% block title %}
+Schedule Consultation
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="h3 mb-4">Schedule Consultation</h1>
+    <div class="card shadow">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <h4 class="mb-3">Consultation Details</h4>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        {{ form.pdl_profile.label_tag }}
+                        {{ form.pdl_profile|add_class:"form-select" }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.physician.label_tag }}
+                        {{ form.physician|add_class:"form-select" }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.location.label_tag }}
+                        {{ form.location|add_class:"form-select" }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.reason.label_tag }}
+                        {{ form.reason|add_class:"form-select" }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.consultation_date_date_only.label_tag }}
+                        {{ form.consultation_date_date_only|add_class:"form-control" }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.consultation_time_block.label_tag }}
+                        {{ form.consultation_time_block|add_class:"form-select" }}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check mt-4">
+                            {{ form.is_an_emergency|add_class:"form-check-input" }}
+                            {{ form.is_an_emergency.label_tag }}
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        {{ form.notes.label_tag }}
+                        {{ form.notes|add_class:"form-control" }}
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Schedule</button>
+                    <a href="{% url 'consultations:consultation_calendar' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

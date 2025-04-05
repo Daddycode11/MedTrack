@@ -1,9 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import Consultation, Physician
 import calendar
 from datetime import date, timedelta
-# get object_or_404
-from django.shortcuts import get_object_or_404
+from django.contrib import messages
+from .forms import ScheduleConsultationForm
 
 def consultation_calendar(request, consultations):#
     """
@@ -118,3 +118,34 @@ def doctor_dashboard(request):
 
     # Render the template
     return render(request, "consultations/doctor_dashboard.html", context)
+
+def schedule_consultation(request):
+    """
+    View to schedule a new consultation.
+    """
+    if request.method == 'POST':
+        form = ScheduleConsultationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('consultations:consultation_calendar')  # Redirect to the consultation list after saving
+    else:
+        form = ScheduleConsultationForm()
+
+    return render(request, 'consultations/schedule_consultation.html', {'form': form})
+
+def cancel_consultation(request, consultation_id):
+    """
+    View to cancel a consultation with confirmation.
+    """
+    consultation = get_object_or_404(Consultation, id=consultation_id)
+
+    if request.method == 'POST':
+        # Mark the consultation as canceled
+        consultation.status = 'canceled'
+        consultation.save()
+
+        # Add a success message
+        messages.success(request, f"Consultation with {consultation.physician} on {consultation.consultation_date_date_only} has been canceled.")
+        return redirect('consultations:consultation_calendar')
+
+    return render(request, 'consultations/cancel_consultation.html', {'consultation': consultation})
