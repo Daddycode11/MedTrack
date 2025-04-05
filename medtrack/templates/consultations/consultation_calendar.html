@@ -64,7 +64,8 @@ Consultation Calendar
                                             </div>
                                             <div class="modal-footer">
                                                 {% if consultation.status != "canceled" %}
-                                                <a href="#" class="btn btn-warning">
+                                                <a href="{% url 'consultations:reschedule_consultation' consultation.id %}"
+                                                class="btn btn-warning">
                                                     <i class="bi bi-arrow-clockwise"></i> Reschedule
                                                 </a>
                                                 <a href="{% url 'consultations:cancel_consultation' consultation.id %}" class="btn btn-danger">

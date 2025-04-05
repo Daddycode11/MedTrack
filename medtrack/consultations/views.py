@@ -149,3 +149,20 @@ def cancel_consultation(request, consultation_id):
         return redirect('consultations:consultation_calendar')
 
     return render(request, 'consultations/cancel_consultation.html', {'consultation': consultation})
+
+def reschedule_consultation(request, consultation_id):
+    """
+    View to reschedule a consultation.
+    """
+    consultation = get_object_or_404(Consultation, id=consultation_id)
+
+    if request.method == 'POST':
+        form = ScheduleConsultationForm(request.POST, instance=consultation)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Consultation with {consultation.physician} has been rescheduled.")
+            return redirect('consultations:consultation_calendar')
+    else:
+        form = ScheduleConsultationForm(instance=consultation)
+
+    return render(request, 'consultations/reschedule_consultation.html', {'form': form, 'consultation': consultation})
