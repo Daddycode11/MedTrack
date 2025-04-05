@@ -3,6 +3,8 @@ from .models import PDLProfile, DetentionInstance
 from medications.models import MedicationPrescription
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
+from consultations.models import Consultation
+from .filters import PDLFilter
 
 # Create your views here.
 
@@ -14,30 +16,20 @@ def index(request):
 
 def pdl_list(request):
     """
-    View function for the PDL list page with pagination.
+    View function to display a list of PDLs with filters.
     """
+    detention_instances = DetentionInstance.objects.select_related('pdl_profile', 'detention_status', 'detention_reason')
+    pdl_filter = PDLFilter(request.GET, queryset=detention_instances)
 
-    # Fetch all PDL profiles with the count of scheduled consultations
-    pdl_profiles = DetentionInstance.objects.annotate(
-        scheduled_consultations_count=Count(
-            'pdl_profile__consultation',
-            filter=Q(pdl_profile__consultation__status="scheduled")
-        )
-    ).order_by("pdl_profile__username__last_name")
-
-    # Set up pagination
-    paginator = Paginator(pdl_profiles, 10)  # Show 10 profiles per page
-    page_number = request.GET.get("page")
+    # Pagination
+    paginator = Paginator(pdl_filter.qs, 10)  # Show 10 PDLs per page
+    page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Render the template with the paginated profiles
-    context = {
-        "page_obj": page_obj,
-    }
-
-    return render(request, "pdl/pdl_list.html", context)
-
-from consultations.models import Consultation
+    return render(request, 'pdl/pdl_list.html', {
+        'filter': pdl_filter,
+        'page_obj': page_obj,
+    })
 
 def pdl_profile(request, pk):
     """
@@ -55,8 +47,6 @@ def pdl_profile(request, pk):
 
     # Get medication prescriptions for the PDL
     medication_prescriptions = MedicationPrescription.objects.filter(pdl_profile=pdl)
-
-
 
     context = {
         "pdl": pdl,

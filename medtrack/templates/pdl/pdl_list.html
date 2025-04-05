@@ -1,11 +1,11 @@
 {% extends "base.html" %}
+{% load widget_tweaks %}
 
 {% block title %}
 PDL List - Medtrack
 {% endblock %}
 
 {% block content %}
-{{ pdl_list }}
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mt-4 mb-5">
        <div>
@@ -17,6 +17,29 @@ PDL List - Medtrack
                 Add New PDL</a>
         </div>
     </div>
+
+    <!-- Filter Form -->
+    <form method="get" class="mb-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                {{ filter.form.pdl_profile.label_tag }}
+                {{ filter.form.pdl_profile|add_class:"form-control" }}
+            </div>
+            <div class="col-md-4">
+                {{ filter.form.detention_status.label_tag }}
+                {{ filter.form.detention_status|add_class:"form-select" }}
+            </div>
+            <div class="col-md-4">
+                {{ filter.form.detention_reason.label_tag }}
+                {{ filter.form.detention_reason|add_class:"form-select" }}
+            </div>
+        </div>
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="{% url 'pdl:pdl_list' %}" class="btn btn-secondary">Reset</a>
+        </div>
+    </form>
+
     <table class="table table-hover table-sm">
         <thead>
             <tr>
@@ -43,7 +66,6 @@ PDL List - Medtrack
                 <td>{{ pdl.detention_term_length }}</td>
                 <td>{{ pdl.detention_start_date }}</td>
                 <td>{{ pdl.detention_end_date }}</td>
-                
                 <td>
                     <a href="{% url 'pdl:pdl_profile' pdl.id %}" class="btn btn-sm btn-outline-primary position-relative" data-bs-toggle="tooltip" data-bs-placement="top" title="View PDL Profile">
                         <i class="bi bi-person"></i>
@@ -59,6 +81,8 @@ PDL List - Medtrack
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Pagination -->
     {% if page_obj.has_previous %}
     <a href="?page=1" class="btn btn-primary">First</a>
     <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-primary">Previous</a>
