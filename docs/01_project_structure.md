@@ -1,7 +1,7 @@
 # 01. Project Structure
 
 
-## Main Folders and Files
+## 01.1 Main Folders and Files
 The root directory of the project contains the following files and folders:
 
 ```plaintext
@@ -24,7 +24,7 @@ This file contains the license information for the project. It specifies the ter
 ### `README.md`
 This file provides an overview of the project, including its purpose, features, and how to get started. It is the first place new users should look for information about the project.
 
-## How a Django Project Works
+## 01.2 How a Django Project Works
 
 A Django project is structured around the Model-View-Template (MVT) architecture. This architecture separates the data model, user interface, and control logic into distinct components, making it easier to manage and maintain the codebase.
 
@@ -46,6 +46,8 @@ The Model-View-Template (MVT) architecture is a design pattern used in Django to
 - **Static Files**: Static files are files that do not change and are served directly to the user. This includes CSS, JavaScript, and images. In Django, static files are managed using the `django.contrib.staticfiles` app, which provides a way to collect and serve static files in development and production.
 
 
+
+## 01.3 Applications
 
 ### `medtrack/medtrack/`
 
