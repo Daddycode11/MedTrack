@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.db.utils import IntegrityError
+from django.contrib.auth.models import User
 from .models import (
     MedicalSpecialty,
     Physician,
@@ -10,6 +11,23 @@ from .models import (
 )
 import datetime as dt
 from pdl.models import PDLProfile  # Ensure this is correctly imported or mocked
+
+class PDLProfileModelTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="janedoe", email="janedoe@example.com", first_name="Jane", last_name="Doe")
+        self.pdl_profile = PDLProfile.objects.create(
+            username=self.user,
+            phone_number="5551234567"
+        )
+
+    def test_pdl_profile_creation(self):
+        self.assertEqual(self.pdl_profile.username.username, "janedoe")
+        self.assertEqual(self.pdl_profile.phone_number, "5551234567")
+
+    def test_pdl_profile_str(self):
+        self.assertEqual(str(self.pdl_profile), "Jane Doe")
+
+
 
 class MedicalSpecialtyModelTest(TestCase):
     def setUp(self):
@@ -28,20 +46,18 @@ class MedicalSpecialtyModelTest(TestCase):
 
 class PhysicianModelTest(TestCase):
     def setUp(self):
+        self.user = User.objects.create_user(username="johndoe", email="johndoe@example.com", first_name="John", last_name="Doe")
         self.specialty = MedicalSpecialty.objects.create(name="Neurology", description="Brain-related specialty.")
         self.physician = Physician.objects.create(
-            first_name="John",
-            last_name="Doe",
+            username=self.user,
             employee_type="full_time",
             specialty=self.specialty,
             phone_number="1234567890",
-            email="johndoe@example.com",
             address="123 Main St"
         )
 
     def test_physician_creation(self):
-        self.assertEqual(self.physician.first_name, "John")
-        self.assertEqual(self.physician.last_name, "Doe")
+        self.assertEqual(self.physician.username.username, "johndoe")
         self.assertEqual(self.physician.specialty, self.specialty)
 
     def test_physician_str(self):
@@ -79,44 +95,21 @@ class ConsultationReasonModelTest(TestCase):
 
 
 class ConsultationModelTest(TestCase):
-    """
-    Unit tests for the Consultation model.
-    This test case verifies the functionality and constraints of the Consultation model, 
-    including its relationships, string representation, and unique constraints.
-    Classes:
-        ConsultationModelTest: Test case for the Consultation model.
-    Methods:
-        setUp:
-            Sets up the test environment by creating instances of related models 
-            (MedicalSpecialty, Physician, ConsultationLocation, ConsultationReason, PDLProfile) 
-            and a Consultation instance for testing.
-        test_consultation_creation:
-            Tests the creation of a Consultation instance and verifies that its fields 
-            are correctly set.
-        test_consultation_str:
-            Tests the string representation of a Consultation instance.
-        test_unique_constraints:
-            Tests the unique constraint on the Consultation model to ensure that duplicate 
-            consultations for the same PDLProfile, physician, location, date, and time block 
-            cannot be created.
-    """
     def setUp(self):
+        self.user_physician = User.objects.create_user(username="alicesmith", email="alicesmith@example.com")
+        self.user_pdl = User.objects.create_user(username="janedoe", email="janedoe@example.com")
         self.specialty = MedicalSpecialty.objects.create(name="Dermatology", description="Skin-related specialty.")
         self.physician = Physician.objects.create(
-            first_name="Alice",
-            last_name="Smith",
+            username=self.user_physician,
             employee_type="part_time",
             specialty=self.specialty,
             phone_number="9876543210",
-            email="alicesmith@example.com",
             address="456 Elm St"
         )
         self.location = ConsultationLocation.objects.create(room_number="202", capacity=5)
         self.reason = ConsultationReason.objects.create(reason="Skin Rash", description="Consultation for skin rash.")
         self.pdl_profile = PDLProfile.objects.create(
-            first_name="Jane",
-            last_name="Doe",
-            email="janedoe@example.com",
+            username=self.user_pdl,
             phone_number="5551234567"
         )
                                     
@@ -149,7 +142,6 @@ class ConsultationModelTest(TestCase):
         )
 
     def test_unique_constraints(self):
-        # Test PDLProfile unique constraint
         with self.assertRaises(IntegrityError):
             Consultation.objects.create(
                 pdl_profile=self.pdl_profile,

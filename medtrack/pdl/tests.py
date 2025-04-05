@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from .models import DetentionStatus, PDLProfile, DetentionReason, DetentionInstance
 from datetime import datetime, timedelta
 
@@ -21,23 +22,21 @@ class DetentionStatusModelTest(TestCase):
 
 class PDLProfileModelTest(TestCase):
     def setUp(self):
-        self.pdl = PDLProfile.objects.create(
-            first_name="John",
-            last_name="Doe",
+        self.user = User.objects.create_user(
+            username="johndoe",
             email="johndoe@email.com",
+            password="password123",
+            first_name="John",
+            last_name="Doe"
+        )
+        self.pdl = PDLProfile.objects.create(
+            username=self.user,
             phone_number="1234567890"
         )
 
     def test_str_representation(self):
         self.assertEqual(str(self.pdl), "John Doe")
 
-    def test_unique_email(self):
-        with self.assertRaises(Exception):
-            PDLProfile.objects.create(
-                first_name="Jane",
-                last_name="Doe",
-                email="johndoe@email.com"
-            )
 
 
 class DetentionReasonModelTest(TestCase):
@@ -53,10 +52,15 @@ class DetentionReasonModelTest(TestCase):
 
 class DetentionInstanceModelTest(TestCase):
     def setUp(self):
-        self.pdl = PDLProfile.objects.create(
+        self.user = User.objects.create_user(
+            username="johndoe",
             first_name="John",
             last_name="Doe",
             email="johndoe@email.com",
+            password="password123"
+        )
+        self.pdl = PDLProfile.objects.create(
+            username=self.user,
             phone_number="1234567890"
         )
         self.status = DetentionStatus.objects.create(
