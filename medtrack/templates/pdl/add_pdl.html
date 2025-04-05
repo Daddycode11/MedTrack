@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}
+Add New PDL
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mx-5">
+    <h1 class="h3 mb-4"><i class="bi bi-person-plus"></i> Add New PDL</h1>
+    <div class="card shadow col-lg-6 px-4 py-2">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <h4><i class="bi bi-person"></i> User Information</h4>
+                {{ user_form.as_p }}
+                <h4 class="mt-4"><i class="bi bi-card-heading"></i> PDL Profile Information</h4>
+                {{ pdl_profile_form.as_p }}
+                <h4 class="mt-4"><i class="bi bi-info-circle"></i> Detention Instance Details</h4>
+                {{ detention_instance_form.as_p }}
+                <button type="submit" class="btn btn-primary mt-3">
+                    <i class="bi bi-save"></i> Save
+                </button>
+                <a href="{% url 'pdl:pdl_list' %}" class="btn btn-secondary mt-3">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

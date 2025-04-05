@@ -1,10 +1,12 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from .models import PDLProfile, DetentionInstance
 from medications.models import MedicationPrescription
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from consultations.models import Consultation
 from .filters import PDLFilter
+from django.contrib.auth.models import User
+from .forms import UserForm, PDLProfileForm, DetentionInstanceForm
 
 # Create your views here.
 
@@ -56,3 +58,37 @@ def pdl_profile(request, pk):
     }
 
     return render(request, 'pdl/pdl_profile.html', context=context)
+
+def add_pdl(request):
+    """
+    View to add a new PDL with detention instance details.
+    """
+    if request.method == 'POST':
+        user_form = UserForm(request.POST)
+        pdl_profile_form = PDLProfileForm(request.POST)
+        detention_instance_form = DetentionInstanceForm(request.POST)
+        if user_form.is_valid() and pdl_profile_form.is_valid() and detention_instance_form.is_valid():
+            # Save the User first
+            user = user_form.save()
+
+            # Save the PDLProfile and associate it with the User
+            pdl_profile = pdl_profile_form.save(commit=False)
+            pdl_profile.username = user
+            pdl_profile.save()
+
+            # Save the DetentionInstance and associate it with the PDLProfile
+            detention_instance = detention_instance_form.save(commit=False)
+            detention_instance.pdl_profile = pdl_profile
+            detention_instance.save()
+
+            return redirect('pdl:pdl_list')  # Redirect to the PDL list after saving
+    else:
+        user_form = UserForm()
+        pdl_profile_form = PDLProfileForm()
+        detention_instance_form = DetentionInstanceForm()
+
+    return render(request, 'pdl/add_pdl.html', {
+        'user_form': user_form,
+        'pdl_profile_form': pdl_profile_form,
+        'detention_instance_form': detention_instance_form,
+    })
