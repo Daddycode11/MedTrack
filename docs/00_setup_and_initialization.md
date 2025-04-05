@@ -1,4 +1,4 @@
-# Section 1. Setup and Initialization
+# 00. Setup and Initialization
 
 This section provides a comprehensive guide to setting up and initializing the project. It covers the prerequisites, installation steps, and configuration options necessary to get started.
 
