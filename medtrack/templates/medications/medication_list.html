@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}
+Medication List
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="h3 text-center mb-4">Medication List</h1>
+    <div class="accordion" id="medicationAccordion">
+        {% for medication_type, medications in grouped_medications.items %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
+                    {{ medication_type }}
+                </button>
+            </h2>
+            <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#medicationAccordion">
+                <div class="accordion-body">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Generic Name</th>
+                                <th>Dosage Form</th>
+                                <th>Strength</th>
+                                <th>Route of Administration</th>
+                                <th>Manufacturer</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for medication in medications %}
+                            <tr>
+                                <td>{{ medication.name }}</td>
+                                <td>{{ medication.generic_name.name }}</td>
+                                <td>{{ medication.get_dosage_form_display }}</td>
+                                <td>{{ medication.strength }}</td>
+                                <td>{{ medication.get_route_of_administration_display }}</td>
+                                <td>{{ medication.manufacturer }}</td>
+                                <td>
+                                    <a href="{% url 'medications:prescription_list' medication.id %}" class="text-primary text-decoration-none">
+                                        <i class="bi bi-eye"></i> View Current Prescriptions ({{ medication.prescription_count }})
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
