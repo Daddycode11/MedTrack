@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from .models import PDLProfile, DetentionInstance
+from medications.models import MedicationPrescription
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 
@@ -52,12 +53,16 @@ def pdl_profile(request, pk):
     # Get consultations for the PDL
     consultations = Consultation.objects.filter(pdl_profile=pdl)
 
+    # Get medication prescriptions for the PDL
+    medication_prescriptions = MedicationPrescription.objects.filter(pdl_profile=pdl)
+
 
 
     context = {
         "pdl": pdl,
         "detention_instances": detention_instances,
         "consultations": consultations,
+        "prescriptions": medication_prescriptions,
     }
 
     return render(request, 'pdl/pdl_profile.html', context=context)
