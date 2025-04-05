@@ -71,3 +71,48 @@ Ran 8 tests in 0.003s
 OK
 Destroying test database for alias 'default'...
 ```
+
+#### Consultations
+
+The following unit tests are implemented in the `consultations` application, found under `consultations/tests.py`:
+
+1. **MedicalSpecialty**:
+   - `test_medical_specialty_creation`: Verifies that a `MedicalSpecialty` instance is created with the correct attributes.
+   - `test_medical_specialty_str`: Ensures the `__str__` method returns the correct string representation.
+
+2. **Physician**:
+   - `test_physician_creation`: Verifies that a `Physician` instance is created with the correct attributes, including the relationship to a `MedicalSpecialty`.
+   - `test_physician_str`: Ensures the `__str__` method returns the correct string representation.
+
+3. **ConsultationLocation**:
+   - `test_consultation_location_creation`: Verifies that a `ConsultationLocation` instance is created with the correct attributes.
+   - `test_consultation_location_str`: Ensures the `__str__` method returns the correct string representation.
+
+4. **ConsultationReason**:
+   - `test_consultation_reason_creation`: Verifies that a `ConsultationReason` instance is created with the correct attributes.
+   - `test_consultation_reason_str`: Ensures the `__str__` method returns the correct string representation.
+
+5. **Consultation**:
+   - `test_consultation_creation`: Verifies that a `Consultation` instance is created with the correct attributes, including relationships to `PDLProfile`, `Physician`, `ConsultationLocation`, and `ConsultationReason`.
+   - `test_consultation_str`: Ensures the `__str__` method returns the correct string representation.
+   - `test_unique_constraints`: Tests the unique constraints defined in the `Consultation` model to ensure no duplicate consultations are created for the same `PDLProfile`, `Physician`, or `Location` in the same time block.
+
+To run the unit tests for the `consultations` app, use the following command:
+
+```bash
+python manage.py test consultations
+```
+
+The result should look like this:
+
+```bash
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+............
+----------------------------------------------------------------------
+Ran 12 tests in 0.345s
+
+OK
+Destroying test database for alias 'default'...
+```
+
