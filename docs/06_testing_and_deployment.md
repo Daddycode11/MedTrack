@@ -2,6 +2,8 @@
 
 ## Testing
 
+
+
 ### Running Unit Tests
 
 Individual unit tests are written for each application in this project. These tests are located in the `tests` directory of each application. To run the unit tests, use the following command:
@@ -32,6 +34,29 @@ Ran 8 tests in 0.123s
 OK
 Destroying test database for alias 'default'...
 ```
+
+### Using the Github Actions CI/CD Pipeline
+
+The project uses a CI/CD pipeline powered by GitHub Actions to automate testing and ensure code quality. The pipeline is defined in the `.github/workflows/django.yml` file and is triggered whenever a commit is pushed to the `main` branch or a pull request is created. It tests the code against Python versions 3.11 and 3.12 to ensure compatibility.
+
+### Key Steps in the Workflow
+
+1. **Triggering the Workflow**: The pipeline runs automatically on `push` and `pull_request` events targeting the `main` branch.
+
+2. **Setting Up the Environment**:
+   - The workflow uses the latest Ubuntu environment (`ubuntu-latest`) to run the tests.
+   - It sets up Python versions 3.11 and 3.12 to test compatibility across multiple versions.
+
+3. **Installing Dependencies**:
+   - The pipeline installs all required dependencies listed in the `requirements.txt` file to ensure the environment is ready for testing.
+
+4. **Running Unit Tests**:
+   - The workflow executes the Django unit tests using the `python manage.py test` command to validate the code.
+
+5. **Reporting Results**:
+   - The results of the tests are reported back to the GitHub Actions interface, providing immediate feedback on the status of the code. If all tests pass, the commit is considered successful and there will be a green checkmark next to the commit in the project page. If any test fails, the commit will show a red x icon, indicating that there are issues that need to be addressed.
+
+
 
 ### Documentation of Unit Tests
 
@@ -115,3 +140,4 @@ Ran 13 tests in 0.006s
 OK
 Destroying test database for alias 'default'...
 ```
+
