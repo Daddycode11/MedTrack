@@ -143,8 +143,11 @@ class Consultation(models.Model):
     notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"Consultation with {self.physician} on {self.consultation_date_date_only.strftime('%Y-%m-%d')}"
-    
+        # Consultation with Physician on Month Year, Time Block
+        # lookup block name in enum
+        block_name = self.consultation_time_block
+        block_value = ConsultationTimeBlock[block_name].value[1]
+        return f"Consultation with {self.physician} on {self.consultation_date_date_only.strftime('%d %B %Y')} at {block_value} in {self.location.room_number}"
     class Meta:
         verbose_name = "Consultation"
         verbose_name_plural = "Consultations"
