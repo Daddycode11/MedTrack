@@ -63,6 +63,8 @@ files:
 
 ### What is MVT?
 
+![MVT Architecture](https://miro.medium.com/v2/resize:fit:640/1*74GXFhRc14JeeWQyzqva-w.jpeg)
+
 The Model-View-Template (MVT) architecture is a design pattern used in Django to
 separate the data model, user interface, and control logic into distinct
 components. This separation allows for better organization of code and easier
