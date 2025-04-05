@@ -44,7 +44,7 @@ The project uses a CI/CD pipeline powered by GitHub Actions to automate testing 
 1. **Triggering the Workflow**: The pipeline runs automatically on `push` and `pull_request` events targeting the `main` branch.
 
 2. **Setting Up the Environment**:
-   - The workflow uses the latest Ubuntu environment (`ubuntu-latest`) to run the tests.
+   - The workflow uses the latest Ubuntu environment (`ubuntu-latest`) to run the tests. Since Django is a Python web framework, the choice of Ubuntu should not affect the tests as it should run on any operating system.
    - It sets up Python versions 3.11 and 3.12 to test compatibility across multiple versions.
 
 3. **Installing Dependencies**:
