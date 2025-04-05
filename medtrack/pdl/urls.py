@@ -5,5 +5,6 @@ app_name = 'pdl'
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('pdl/list', views.pdl_list, name='pdl_list'),
+    path('list/', views.pdl_list, name='pdl_list'),  # Example existing URL
+    path('profile/<int:pk>/', views.pdl_profile, name='pdl_profile'),  # New URL
 ]
