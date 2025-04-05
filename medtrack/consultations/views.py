@@ -1,15 +1,16 @@
 from django.shortcuts import render
-from .models import Consultation
+from .models import Consultation, Physician
 import calendar
 from datetime import date, timedelta
+# get object_or_404
+from django.shortcuts import get_object_or_404
 
-def consultation_calendar(request):
+def consultation_calendar(request, consultations):#
     """
     View function to display all consultation appointments in a calendar format.
     """
     # Get all consultations
-    consultations = Consultation.objects.all()
-
+   
     # Prepare data for the calendar
     today = date.today()
     year = request.GET.get('year', today.year)
@@ -63,4 +64,47 @@ def consultation_calendar(request):
         'next_year': year if month < 12 else year + 1
     }
 
-    return render(request, 'consultations/consultation_calendar.html', context)
+    return context
+
+
+def all_consultations(request):
+    """
+    View function to display all consultations.
+    """
+    # Fetch all consultations
+    consultations = Consultation.objects.all()
+
+    # Get the calendar data
+    context = consultation_calendar(request, consultations)
+
+    # Render the template
+    return render(request, "consultations/consultation_calendar.html", context)
+
+def consultations_by_physician(request, physician_id):
+    """
+    View function to display consultations for a specific physician.
+    """
+    physician = get_object_or_404(Physician, id=physician_id)
+    # Fetch consultations for the specified physician
+    consultations = Consultation.objects.filter(physician=physician)
+
+    # Get the calendar data
+    context = consultation_calendar(request, consultations)
+
+    # Render the template
+    return render(request, "consultations/consultation_calendar.html", context)
+
+def doctor_dashboard(request):
+    """
+    View function to display the doctor's dashboard.
+    """
+    # Emulate view by fetching  'jessicaadams' physician
+
+    physician = get_object_or_404(Physician, username__username='jessicaadams')
+
+    context = {
+        'physician': physician
+    }
+
+    # Render the template
+    return render(request, "consultations/doctor_dashboard.html", context)

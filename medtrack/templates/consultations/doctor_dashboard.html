@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}
+Doctor Dashboard
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="h3 text-center mb-4">Doctor Dashboard</h1>
+    <div class="row">
+        <!-- Left Column: Doctor Profile -->
+        <div class="col-md-4">
+            <div class="card shadow h-100">
+                <div class="card-body">
+                    <h4 class="card-title">Doctor Profile</h4>
+                    <p><strong>Name:</strong> {{ physician.username.first_name }} {{ physician.username.last_name }}</p>
+                    <p><strong>Email:</strong> {{ physician.username.email }}</p>
+                    <p><strong>Phone:</strong> {{ physician.phone_number }}</p>
+                    <p><strong>Specialty:</strong> {{ physician.specialty.name }}</p>
+                    <p><strong>Address:</strong> {{ physician.address }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Links -->
+        <div class="col-md-8">
+            <div class="card shadow h-100">
+                <div class="card-body">
+                    <h4 class="card-title">Quick Links</h4>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <a href="{% url 'consultations:consultation_calendar_physician' physician.id %}"
+                            class="text-decoration-none">
+                                <i class="bi bi-calendar-event pe-2"></i> View Consultation Calendar
+                            </a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="#" class="text-decoration-none">
+                                <i class="bi bi-capsule pe-2"></i> View Medication List
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
