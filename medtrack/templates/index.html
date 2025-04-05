@@ -7,7 +7,38 @@ Home - Medtrack
 {% block content %}
 <div class="text-center">
     <h1>Welcome to Medtrack</h1>
-    <p class="lead">Your one-stop solution for managing detention records efficiently.</p>
-    <a href="#" class="btn btn-primary">Get Started</a>
+    <p class="lead">Your trusted platform for scheduling and tracking medical consultations for PDLs.</p>
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card py-5">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-circle display-4"></i>
+                    <h5 class="card-title mt-3">PDL Dashboard</h5>
+                    <p class="card-text">Access your personal dashboard to view and manage your consultations.</p>
+                    <a href="/pdl-dashboard" class="btn btn-primary">Go to PDL Dashboard</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card py-5">
+                <div class="card-body text-center">
+                    <i class="bi bi-shield-lock display-4"></i>
+                    <h5 class="card-title mt-3">Admin Dashboard</h5>
+                    <p class="card-text">Manage users, schedules, and system settings from the admin panel.</p>
+                    <a href="{% url 'pdl:pdl_list' %}" class="btn btn-primary">Go to Admin Dashboard</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card py-5">
+                <div class="card-body text-center">
+                    <i class="bi bi-capsule-pill display-4"></i>
+                    <h5 class="card-title mt-3">Doctor Dashboard</h5>
+                    <p class="card-text">View and manage your appointments and patient records.</p>
+                    <a href="/doctor-dashboard" class="btn btn-primary">Go to Doctor Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
