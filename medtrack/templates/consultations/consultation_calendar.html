@@ -12,7 +12,6 @@ Consultation Calendar
         <a href="?month={{ next_month }}&year={{ next_year }}" class="btn btn-outline-primary">Next &raquo;</a>
     </div>
 
-
     <div class="table">
         <table class="table table-bordered">
             <thead>
@@ -30,7 +29,7 @@ Consultation Calendar
                 {% for week in calendar_data|slice:7 %}
                 <tr>
                     {% for day in week %}
-                    <td class="{% if not day.day %}bg-secondary opacity-50{% endif %}">
+                    <td class="position-relative {% if not day.day %}bg-secondary opacity-50{% endif %}">
                         {% if day.day %}
                         <h5 class="fw-semibold">{{ day.day }}</h5>
                         <div>
@@ -84,6 +83,9 @@ Consultation Calendar
                                 <p class="small text-muted">No consultations scheduled.</p>
                             {% endif %}
                         </div>
+
+                        <!-- Add Consultation Button -->
+                       
                         {% endif %}
                     </td>
                     {% endfor %}
