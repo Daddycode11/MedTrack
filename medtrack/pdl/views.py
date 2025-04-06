@@ -38,10 +38,12 @@ def pdl_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'pdl/pdl_list.html', {
+    context = {
         'filter': pdl_filter,
         'page_obj': page_obj,
-    })
+    }
+
+    return render(request, 'pdl/pdl_list.html', context=context)
 
 def pdl_profile(request):
     """
