@@ -23,3 +23,9 @@ urlpatterns = [
     path('consultations/', include('consultations.urls')),  # Include the URLs from the consultations app
     path('medications/', include('medications.urls')),  # Include the URLs from the medications app
 ]
+
+# redirect root URL to pdl app
+from django.views.generic import RedirectView
+urlpatterns += [
+    path('', RedirectView.as_view(url='/pdl/', permanent=True)),
+]
