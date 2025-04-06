@@ -1,6 +1,122 @@
+# 03. Consultations Application
+
+
+
 ## Data model
 
 ![Consultations Schema](img/schema_consultations.png)
+
+### `MedicalSpecialty`
+
+Represents a medical specialty.
+
+- **Fields**:
+  - `name (CharField)`: The name of the medical specialty (max length: 100).
+  - `description (TextField)`: A description of the medical specialty.
+
+- **Meta Options**:
+  - `verbose_name`: "Medical Specialty".
+  - `verbose_name_plural`: "Medical Specialties".
+  - `ordering`: Ordered by `name`.
+
+- **Methods**:
+  - `__str__`: Returns the name of the medical specialty.
+
+---
+
+### `Physician`
+
+Represents a doctor.
+
+- **Fields**:
+  - `username (ForeignKey)`: A reference to the `User` model.
+  - `employee_type (CharField)`: The type of employment (choices: `full_time`, `part_time`, `contract`).
+  - `specialty (ForeignKey)`: A reference to the `MedicalSpecialty` model.
+  - `phone_number (CharField)`: The physician's phone number (max length: 15).
+  - `address (CharField)`: The physician's address (max length: 255).
+
+- **Meta Options**:
+  - `verbose_name`: "Physician".
+  - `verbose_name_plural`: "Physicians".
+  - `ordering`: Ordered by the physician's last name.
+
+- **Methods**:
+  - `__str__`: Returns the physician's full name and specialty.
+
+---
+
+### `ConsultationLocation`
+
+Represents a consultation location.
+
+- **Fields**:
+  - `room_number (CharField)`: The room number (max length: 10).
+  - `capacity (IntegerField)`: The capacity of the room.
+
+- **Meta Options**:
+  - `verbose_name`: "Consultation Location".
+  - `verbose_name_plural`: "Consultation Locations".
+  - `ordering`: Ordered by `room_number`.
+
+- **Methods**:
+  - `__str__`: Returns the room number.
+
+---
+
+### `ConsultationReason`
+
+Represents a reason for consultation.
+
+- **Fields**:
+  - `reason (CharField)`: The reason for the consultation (max length: 255).
+  - `description (TextField)`: A description of the reason (optional).
+
+- **Meta Options**:
+  - `verbose_name`: "Consultation Reason".
+  - `verbose_name_plural`: "Consultation Reasons".
+  - `ordering`: Ordered by `reason`.
+
+- **Methods**:
+  - `__str__`: Returns the reason.
+
+---
+
+### `ConsultationTimeBlock`
+
+An enumeration representing 30-minute time blocks for consultations.
+
+- **Values**:
+  - `BLOCK_01` to `BLOCK_48`: Representing time blocks from `00:00` to `23:30`.
+
+---
+
+### `Consultation`
+
+Represents a consultation.
+
+- **Fields**:
+  - `pdl_profile (ForeignKey)`: A reference to the `PDLProfile` model.
+  - `physician (ForeignKey)`: A reference to the `Physician` model.
+  - `location (ForeignKey)`: A reference to the `ConsultationLocation` model.
+  - `reason (ForeignKey)`: A reference to the `ConsultationReason` model.
+  - `status (CharField)`: The status of the consultation (choices: `scheduled`, `completed`, `canceled`).
+  - `consultation_date_date_only (DateField)`: The date of the consultation.
+  - `consultation_time_block (CharField)`: The time block of the consultation (choices: `ConsultationTimeBlock`).
+  - `is_an_emergency (BooleanField)`: Indicates if the consultation is an emergency.
+  - `notes (TextField)`: Additional notes for the consultation (optional).
+
+- **Meta Options**:
+  - `verbose_name`: "Consultation".
+  - `verbose_name_plural`: "Consultations".
+  - `ordering`: Ordered by `consultation_date_date_only` and `consultation_time_block`.
+  - **Constraints**:
+    - Unique consultation per PDL profile, date, and time block.
+    - Unique consultation per physician, date, and time block.
+    - Unique consultation per location, date, and time block.
+
+- **Methods**:
+  - `__str__`: Returns a string representation of the consultation, including the physician, date, time block, and location.
+  - `consultation_time_block_display`: Returns the display value of the consultation time block.
 
 ##  Views, URLS and Forms
 
