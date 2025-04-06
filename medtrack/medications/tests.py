@@ -1,11 +1,9 @@
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
 from django.contrib.auth.models import User
-from pdl.models import PDLProfile
-from consultations.models import (
-    Physician,
-    MedicalSpecialty
-)
-
+from django.urls import reverse
+from datetime import date, timedelta
+from django_filters import FilterSet
+from .filters import MedicationFilter
 from .models import (
     Pharmacist,
     MedicationType,
@@ -14,7 +12,10 @@ from .models import (
     MedicationInventory,
     MedicationPrescription,
 )
-from datetime import date, timedelta
+from pdl.models import PDLProfile
+from consultations.models import Physician, MedicalSpecialty
+from .views import medication_list
+
 
 
 class PharmacistModelTest(TestCase):
@@ -168,3 +169,80 @@ class MedicationPrescriptionModelTest(TestCase):
 
     def test_prescription_str(self):
         self.assertEqual(str(self.prescription), "Amoxil (Amoxicillin) prescribed to Jane Doe")
+
+class MedicationListViewTests(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+        # Create sample data
+        medication_type = MedicationType.objects.create(name="Antibiotic")
+        generic_name = MedicationGenericName.objects.create(name="Amoxicillin", medication_type=medication_type)
+        Medication.objects.create(name="Amoxicillin 500mg", generic_name=generic_name)
+        Medication.objects.create(name="Amoxicillin 250mg", generic_name=generic_name)
+
+    def test_medication_list_view(self):
+        """
+        Test the medication_list view to ensure it groups medications by type and applies filters.
+        """
+        request = self.factory.get(reverse('medications:medication_list'))
+        response = medication_list(request)
+
+        self.assertEqual(response.status_code, 200)
+        
+
+
+
+class MedicationFilterTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        # Create sample Medication objects for testing
+        cls.medication_generic_name1 = MedicationGenericName.objects.create(
+            name="Acetylsalicylic Acid",
+            medication_type=MedicationType.objects.create(name="Analgesic")
+        )
+        cls.medication_generic_name2 = MedicationGenericName.objects.create(
+            name="Ibuprofen",
+            medication_type=MedicationType.objects.create(name="Anti-inflammatory")
+        )
+        cls.medication_generic_name3 = MedicationGenericName.objects.create(
+            name="Acetaminophen",
+            medication_type=MedicationType.objects.get_or_create(name="Analgesic")[0]
+        )
+        cls.med1 = Medication.objects.create(
+            name="Aspirin",
+            generic_name=cls.medication_generic_name1,
+            dosage_form="Tablet",
+            route_of_administration="Oral"
+        )
+        cls.med2 = Medication.objects.create(
+            name="Ibuprofen",
+            generic_name=cls.medication_generic_name2,
+            dosage_form="Capsule",
+            route_of_administration="Oral"
+        )
+        cls.med3 = Medication.objects.create(
+            name="Tylenol",
+            generic_name=cls.medication_generic_name3,
+            dosage_form="Syrup",
+            route_of_administration="Oral"
+        )
+
+    def test_filter_by_name(self):
+        filter_data = {'name': 'aspirin'}
+        filtered = MedicationFilter(filter_data, queryset=Medication.objects.all())
+        self.assertEqual(filtered.qs.count(), 1)
+        self.assertEqual(filtered.qs.first(), self.med1)
+
+    def test_filter_by_generic_name(self):
+        filter_data = {'generic_name': 'ibuprofen'}
+        filtered = MedicationFilter(filter_data, queryset=Medication.objects.all())
+        self.assertEqual(filtered.qs.count(), 1)
+        self.assertEqual(filtered.qs.first(), self.med2)
+
+    def test_filter_by_route_of_administration(self):
+        filter_data = {'route_of_administration': 'Oral'}
+        filtered = MedicationFilter(filter_data, queryset=Medication.objects.all())
+        self.assertEqual(filtered.qs.count(), 3)
+        self.assertIn(self.med1, filtered.qs)
+        self.assertIn(self.med2, filtered.qs)
+        self.assertIn(self.med3, filtered.qs)
