@@ -18,9 +18,19 @@ def index(request):
 
 def pdl_list(request):
     """
-    View function to display a list of PDLs with filters.
+    View function to display a list of PDLs with filters and consultation counts.
     """
-    detention_instances = DetentionInstance.objects.select_related('pdl_profile', 'detention_status', 'detention_reason')
+    # Fetch detention instances and annotate with consultation counts
+    detention_instances = DetentionInstance.objects.select_related(
+        'pdl_profile', 'detention_status', 'detention_reason'
+    ).annotate(
+        consultation_count=Count(
+            'pdl_profile__consultation',
+            filter=Q(pdl_profile__consultation__status='scheduled')
+        )
+    )
+
+    # Apply filters
     pdl_filter = PDLFilter(request.GET, queryset=detention_instances)
 
     # Pagination
@@ -45,6 +55,36 @@ def pdl_profile(request):
     # fetch the detention instance
     detention_instance = DetentionInstance.objects.filter(pdl_profile=pdl_profile).first()
   
+    # Remap to get all the detention instances for the PDL
+    detention_instances = DetentionInstance.objects.filter(pdl_profile=pdl_profile)
+
+    # Get consultations for the PDL
+    consultations = Consultation.objects.filter(pdl_profile=pdl_profile)
+
+    # Get medication prescriptions for the PDL
+    medication_prescriptions = MedicationPrescription.objects.filter(pdl_profile=pdl_profile)
+
+    context = {
+        "pdl": pdl_profile,
+        "detention_instance": detention_instance,
+        "detention_instances": detention_instances,
+        "consultations": consultations,
+        "prescriptions": medication_prescriptions,
+    }
+
+    return render(request, 'pdl/pdl_profile.html', context=context)
+
+
+def pdl_profile_by_id(request, pk):
+    """
+    View to display the profile of a specific PDL.
+    """
+
+    # emulate profile for username = 'johndoe'
+
+    detention_instance = get_object_or_404(DetentionInstance, pk=pk)
+    pdl_profile = detention_instance.pdl_profile
+
     # Remap to get all the detention instances for the PDL
     detention_instances = DetentionInstance.objects.filter(pdl_profile=pdl_profile)
 

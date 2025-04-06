@@ -69,11 +69,11 @@ PDL List - Medtrack
                 <td>{{ pdl.detention_start_date }}</td>
                 <td>{{ pdl.detention_end_date }}</td>
                 <td>
-                    <a href="{% url 'pdl:pdl_profile' pdl.id %}" class="btn btn-sm btn-outline-primary position-relative" data-bs-toggle="tooltip" data-bs-placement="top" title="View PDL Profile">
+                    <a href="{% url 'pdl:pdl_profile_by_id' pdl.id %}" class="btn btn-sm btn-outline-primary position-relative" data-bs-toggle="tooltip" data-bs-placement="top" title="View PDL Profile">
                         <i class="bi bi-person"></i>
-                        {% if pdl.scheduled_consultations_count > 0 %}
+                        {% if pdl.consultation_count > 0 %}
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            {{ pdl.scheduled_consultations_count }}
+                            {{ pdl.consultation_count }}
                             <span class="visually-hidden">unread messages</span>
                         </span>
                         {% endif %}
