@@ -6,44 +6,121 @@ PDL Profile - {{ pdl.pdl_profile }}
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="h3">PDL Profile</h1>
+    <h1 class="h3 mb-5 pt-3">
+        <i class="bi bi-person-badge pe-2"></i>
+        PDL Profile
+    </h1>
     <div class="row d-flex align-items-stretch">
         <div class="col-md-4 mb-3">
-            <div class="card px-5 py-5 shadow  h-100">
-                <h4>Personal Information</h4>
-                <p><strong>Name:</strong> {{ pdl.pdl_profile }}</p>
-                <p><strong>ID:</strong> {{ pdl.id }}</p>
-                <p><strong>Detention Status:</strong> {{ pdl.detention_status }}</p>
-                <p><strong>Detention Reason:</strong> {{ pdl.detention_reason }}</p>
-                <p><strong>Detention Term Length:</strong> {{ pdl.detention_term_length }}</p>
+            <div class="card px-5 py-5 shadow h-100">
+                <h4 class="pb-4">
+                    <i class="bi bi-person-circle pe-1"></i>
+                    Personal Information
+                </h4>
+                <p>
+                    <i class="bi bi-person pe-2"></i>
+                    <strong>Name:</strong> {{ pdl.username.first_name }} {{ pdl.username.last_name }}
+                </p>
+                <p>
+                    <i class="bi bi-shield-lock pe-2"></i>
+                    <strong>Detention Status:</strong> {{ detention_instance.detention_status }}
+                </p>
+                <p>
+                    <i class="bi bi-exclamation-circle pe-2"></i>
+                    <strong>Detention Reason:</strong> {{ detention_instance.detention_reason }}
+                </p>
+                <p>
+                    <i class="bi bi-calendar-check pe-2"></i>
+                    <strong>Detention Term Length:</strong> {{ detention_instance.detention_term_length }}
+                </p>
             </div>
         </div>
         <div class="col-md-4 mb-3">
-            <div class="card px-5 py-5 shadow  h-100">
-                <h4 class="pb-4">
-                    <i class="bi bi-journal-medical pe-1"></i>
-                    Consultations
+            <div class="card p-5 h-100">
+                <h4 class="pb-3 d-flex align-items-center">
+                    <i class="bi bi-journal-medical pe-2"></i>
+                    <span>Consultations</span>
                 </h4>
 
-                {% for consultation in consultations %}
-                   <p class=" border-bottom pb-2">
-                    {{ consultation }}
-                   </p>
-                {% endfor %}
-                
+                {% if consultations %}
+                    {% for consultation in consultations %}
+                        <div class="d-flex align-items-center border-bottom pb-2 mb-3">
+                            <i class="bi bi-chat-left-dots pe-2 text-secondary"></i>
+                            <a href="#" class="ps-2 small text-decoration-none" data-bs-toggle="modal" data-bs-target="#consultationModal{{ forloop.counter }}">
+                                {{ consultation }}
+                            </a>
+                        </div>
+
+                        <!-- Modal -->
+                        <div class="modal fade" id="consultationModal{{ forloop.counter }}" tabindex="-1" aria-labelledby="consultationModalLabel{{ forloop.counter }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="consultationModalLabel{{ forloop.counter }}">Consultation Details</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p><strong>Date:</strong> {{ consultation.consultation_date_date_only }}</p>
+                                        <p><strong>Time:</strong> {{ consultation.consultation_time_block_display }}</p>
+                                        <p><strong>Physician:</strong> {{ consultation.physician }}</p>
+                                        <p><strong>Location:</strong> {{ consultation.location }}</p>
+                                        <p><strong>Reason:</strong> {{ consultation.reason }}</p>
+                                        <p><strong>Notes:</strong> {{ consultation.notes }}</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted fst-italic">No consultations available.</p>
+                {% endif %}
             </div>
         </div>
         <div class="col-md-4 mb-3">
-            <div class="card px-5 py-5 shadow  h-100">
-                <h4 class="pb-4">
-                    <i class="bi bi-capsule pe-1"></i>
-                    Medications</h4>
+            <div class="card p-5 h-100">
+                <h4 class="pb-3 d-flex align-items-center">
+                    <i class="bi bi-capsule pe-2"></i>
+                    <span>Medications</span>
+                </h4>
 
-                {% for prescription in prescriptions %}
-                    <p class=" border-bottom pb-2">
-                        {{ prescription }}
-                    </p>
-                {% endfor %}
+                {% if prescriptions %}
+                    {% for prescription in prescriptions %}
+                        <div class="d-flex align-items-center border-bottom pb-2 mb-3">
+                            <i class="bi bi-capsule-pill pe-2 text-secondary"></i>
+                            <a href="#" class="ps-2 small text-decoration-none" data-bs-toggle="modal" data-bs-target="#prescriptionModal{{ forloop.counter }}">
+                                {{ prescription.medication }} &middot; {{ prescription.dosage }}
+                            </a>
+                        </div>
+
+                        <!-- Modal -->
+                        <div class="modal fade" id="prescriptionModal{{ forloop.counter }}" tabindex="-1" aria-labelledby="prescriptionModalLabel{{ forloop.counter }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="prescriptionModalLabel{{ forloop.counter }}">Prescription Details</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p><strong>Medication:</strong> {{ prescription.medication }}</p>
+                                        <p><strong>Dosage:</strong> {{ prescription.dosage }}</p>
+                                        <p><strong>Frequency:</strong> {{ prescription.frequency }}</p>
+                                        <p><strong>Duration:</strong> {{ prescription.duration }}</p>
+                                        <p><strong>Prescribed By:</strong> {{ prescription.prescribed_by }}</p>
+                                        <p><strong>Notes:</strong> {{ prescription.notes }}</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted fst-italic">No medications available.</p>
+                {% endif %}
             </div>
         </div>
     </div>

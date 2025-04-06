@@ -33,25 +33,30 @@ def pdl_list(request):
         'page_obj': page_obj,
     })
 
-def pdl_profile(request, pk):
+def pdl_profile(request):
     """
     View to display the profile of a specific PDL.
     """
-    # fetch the detention instance
-    detention_instance = get_object_or_404(DetentionInstance, pk=pk)
-    pdl = get_object_or_404(PDLProfile, pk=detention_instance.pdl_profile.pk)
 
+    # emulate profile for username = 'johndoe'
+
+    user = User.objects.get(username='johndoe')
+    pdl_profile = PDLProfile.objects.get(username=user)
+    # fetch the detention instance
+    detention_instance = DetentionInstance.objects.filter(pdl_profile=pdl_profile).first()
+  
     # Remap to get all the detention instances for the PDL
-    detention_instances = DetentionInstance.objects.filter(pdl_profile=pdl)
+    detention_instances = DetentionInstance.objects.filter(pdl_profile=pdl_profile)
 
     # Get consultations for the PDL
-    consultations = Consultation.objects.filter(pdl_profile=pdl)
+    consultations = Consultation.objects.filter(pdl_profile=pdl_profile)
 
     # Get medication prescriptions for the PDL
-    medication_prescriptions = MedicationPrescription.objects.filter(pdl_profile=pdl)
+    medication_prescriptions = MedicationPrescription.objects.filter(pdl_profile=pdl_profile)
 
     context = {
-        "pdl": pdl,
+        "pdl": pdl_profile,
+        "detention_instance": detention_instance,
         "detention_instances": detention_instances,
         "consultations": consultations,
         "prescriptions": medication_prescriptions,
