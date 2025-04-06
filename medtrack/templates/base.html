@@ -19,7 +19,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'pdl:index' %}">Home</a>
                     </li>
@@ -36,6 +36,11 @@
                         <a class="nav-link" href="{% url 'admin:index' %}">IT Admin</a>
                     </li>
                 </ul>
+                <!-- Dark Mode Toggle Button -->
+                <button id="themeToggle" class="btn btn-outline-secondary d-flex align-items-center">
+                    <i id="themeIcon" class="bi bi-moon pe-2"></i>
+                    <span id="themeText">Switch to Light Mode</span>
+                </button>
             </div>
         </div>
     </nav>
@@ -53,6 +58,35 @@
 
     {% block content %}{% endblock %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // JavaScript for Dark Mode Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
+        const htmlElement = document.documentElement;
+
+        // Check localStorage for saved theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            htmlElement.setAttribute('data-bs-theme', savedTheme);
+            themeIcon.className = savedTheme === 'dark' ? 'bi bi-moon pe-2' : 'bi bi-sun pe-2';
+            themeText.textContent = savedTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+        } else {
+            // Default to dark mode
+            htmlElement.setAttribute('data-bs-theme', 'dark');
+            themeIcon.className = 'bi bi-moon pe-2';
+            themeText.textContent = 'Switch to Light Mode';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            htmlElement.setAttribute('data-bs-theme', newTheme);
+            themeIcon.className = newTheme === 'dark' ? 'bi bi-moon pe-2' : 'bi bi-sun pe-2';
+            themeText.textContent = newTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+            localStorage.setItem('theme', newTheme); // Save theme to localStorage
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
