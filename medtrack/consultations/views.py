@@ -5,11 +5,31 @@ from datetime import date, timedelta
 from django.contrib import messages
 from .forms import ScheduleConsultationForm
 
-def consultation_calendar(request, consultations):#
+
+def consultation_calendar(request, consultations):
     """
-    View function to display all consultation appointments in a calendar format.
+    Generates a calendar view for consultations within a specified month and year.
+    Args:
+        request (HttpRequest): The HTTP request object containing optional 'year' and 'month' 
+            query parameters to specify the calendar's year and month. Defaults to the current 
+            year and month if not provided.
+        consultations (QuerySet): A queryset of consultation objects, each containing a 
+            `consultation_date_date_only` attribute representing the date of the consultation.
+    Returns:
+        dict: A context dictionary containing the following keys:
+            - 'calendar_data' (list): A list of weeks, where each week is a list of dictionaries 
+              representing days. Each day dictionary contains:
+                - 'day' (int or None): The day of the month, or None for days outside the current month.
+                - 'weekday' (int): The weekday index (0=Monday, 6=Sunday).
+                - 'consultations' (list): A list of consultations scheduled for that day.
+            - 'year' (int): The year of the calendar.
+            - 'month' (int): The month of the calendar.
+            - 'month_name' (str): The full name of the month.
+            - 'prev_month' (int): The previous month (1-12).
+            - 'prev_year' (int): The year corresponding to the previous month.
+            - 'next_month' (int): The next month (1-12).
+            - 'next_year' (int): The year corresponding to the next month.
     """
-    # Get all consultations
    
     # Prepare data for the calendar
     today = date.today()
@@ -69,8 +89,20 @@ def consultation_calendar(request, consultations):#
 
 def all_consultations(request):
     """
-    View function to display all consultations.
+    Handles the retrieval and display of all consultations.
+
+    This view fetches all consultation records from the database, 
+    prepares the calendar data for the consultations, and renders 
+    the consultation calendar template.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: The rendered consultation calendar template 
+        with the context containing consultation data.
     """
+
     # Fetch all consultations
     consultations = Consultation.objects.all()
 
@@ -82,8 +114,22 @@ def all_consultations(request):
 
 def consultations_by_physician(request, physician_id):
     """
-    View function to display consultations for a specific physician.
+    Handles the retrieval and display of consultations for a specific physician.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        physician_id (int): The ID of the physician whose consultations are to be retrieved.
+
+    Returns:
+        HttpResponse: A rendered HTML page displaying the consultation calendar for the specified physician.
+
+    Raises:
+        Http404: If no Physician object with the given ID is found.
+
+    This view fetches all consultations associated with the specified physician,
+    prepares the data for a consultation calendar, and renders the corresponding template.
     """
+
     physician = get_object_or_404(Physician, id=physician_id)
     # Fetch consultations for the specified physician
     consultations = Consultation.objects.filter(physician=physician)
@@ -93,14 +139,33 @@ def consultations_by_physician(request, physician_id):
 
     # Render the template
     return render(request, "consultations/consultation_calendar.html", context)
+
+
 from datetime import date
 from django.shortcuts import render, get_object_or_404
 from .models import Physician, Consultation
 
 def doctor_dashboard(request):
     """
-    View function to display the doctor's dashboard.
+    Displays the doctor's dashboard with relevant information.
+
+    This view function retrieves the physician with the username 'jessicaadams'
+    and fetches the next three upcoming consultations for that physician. The
+    consultations are filtered to include only those scheduled for today or later
+    and are sorted by date and time.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: The rendered HTML template for the doctor's dashboard.
+
+    Context:
+        physician (Physician): The physician object for 'jessicaadams'.
+        upcoming_consultations (QuerySet): A queryset containing up to three
+            upcoming consultations for the physician, sorted by date and time.
     """
+    
     # Emulate view by fetching 'jessicaadams' physician
     physician = get_object_or_404(Physician, username__username='jessicaadams')
 
@@ -121,8 +186,24 @@ def doctor_dashboard(request):
 
 def schedule_consultation(request):
     """
-    View to schedule a new consultation.
+    Handle the scheduling of a consultation.
+
+    This view processes both GET and POST requests. For a GET request, it 
+    initializes an empty `ScheduleConsultationForm` and renders the 
+    consultation scheduling page. For a POST request, it validates the 
+    submitted form data, saves the consultation if the form is valid, and 
+    redirects the user to the consultation calendar.
+
+    Args:
+        request (HttpRequest): The HTTP request object containing metadata 
+        about the request.
+
+    Returns:
+        HttpResponse: Renders the consultation scheduling page with the form 
+        for GET requests or redirects to the consultation calendar for valid 
+        POST requests.
     """
+
     if request.method == 'POST':
         form = ScheduleConsultationForm(request.POST)
         if form.is_valid():
@@ -135,8 +216,21 @@ def schedule_consultation(request):
 
 def cancel_consultation(request, consultation_id):
     """
-    View to cancel a consultation with confirmation.
+    Handles the cancellation of a consultation.
+    This view retrieves a consultation by its ID and allows the user to cancel it.
+    If the request method is POST, the consultation's status is updated to 'canceled',
+    and a success message is displayed to the user. The user is then redirected to
+    the consultation calendar. If the request method is not POST, the cancellation
+    confirmation page is rendered.
+    Args:
+        request (HttpRequest): The HTTP request object.
+        consultation_id (int): The ID of the consultation to be canceled.
+    Returns:
+        HttpResponse: Renders the cancellation confirmation page if the request
+        method is not POST. Redirects to the consultation calendar if the
+        consultation is successfully canceled.
     """
+  
     consultation = get_object_or_404(Consultation, id=consultation_id)
 
     if request.method == 'POST':
@@ -152,8 +246,32 @@ def cancel_consultation(request, consultation_id):
 
 def reschedule_consultation(request, consultation_id):
     """
-    View to reschedule a consultation.
+    Handle the rescheduling of a consultation.
+
+    This view retrieves a consultation by its ID and allows the user to reschedule it
+    by submitting a form. If the form submission is valid, the consultation is updated
+    and the user is redirected to the consultation calendar. If the request is not a POST,
+    the form is pre-filled with the current consultation details.
+
+    Args:
+        request (HttpRequest): The HTTP request object containing metadata about the request.
+        consultation_id (int): The ID of the consultation to be rescheduled.
+
+    Returns:
+        HttpResponse: Renders the reschedule consultation page with the form if the request
+        is not a POST, or redirects to the consultation calendar upon successful form submission.
+
+    Raises:
+        Http404: If the consultation with the given ID does not exist.
+
+    Template:
+        consultations/reschedule_consultation.html
+
+    Context:
+        form (ScheduleConsultationForm): The form for scheduling the consultation.
+        consultation (Consultation): The consultation object being rescheduled.
     """
+
     consultation = get_object_or_404(Consultation, id=consultation_id)
 
     if request.method == 'POST':

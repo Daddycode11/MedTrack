@@ -154,6 +154,23 @@ found under `consultations/tests.py`:
      `Consultation` model to ensure no duplicate consultations are created for
      the same `PDLProfile`, `Physician`, or `Location` in the same time block.
 
+6. **Consultation Calendar**:
+      - `test_calendar_view_renders_correctly`: Verifies that the consultation calendar view renders correctly with a GET request.
+      - `test_calendar_displays_consultations`: Ensures that the consultation calendar displays scheduled consultations correctly.
+      - `test_calendar_handles_no_consultations`: Tests that the consultation calendar handles the case where no consultations are scheduled.
+      - `test_calendar_filters_by_date`: Verifies that the consultation calendar correctly filters consultations by a specific date.
+      - `test_calendar_handles_invalid_date`: Ensures that the consultation calendar gracefully handles invalid date inputs.
+
+7. **ScheduleConsultationForm**:
+      - `test_form_valid_data`: Verifies that the form is valid when all required fields are provided with correct data.
+      - `test_form_missing_required_fields`: Ensures the form is invalid when required fields, such as `consultation_date_date_only`, are missing.
+      - `test_form_invalid_date`: Tests that the form is invalid when an invalid date is provided for `consultation_date_date_only`.
+      - `test_form_invalid_location`: Verifies that the form is invalid when an invalid `location` ID is provided.
+
+8. **ScheduleConsultationViewTests**:
+    - `test_schedule_consultation_get`: Verifies that the schedule consultation page renders correctly with a GET request, using the correct template and providing a valid form in the context.
+    - `test_schedule_consultation_post_invalid_data`: Ensures that an invalid POST request does not schedule a consultation, re-renders the form with errors, and does not create any `Consultation` instances.
+
 To run the unit tests for the `consultations` app, use the following command:
 
 ```bash
@@ -167,11 +184,13 @@ Creating test database for alias 'default'...
 System check identified no issues (0 silenced).
 ............
 ----------------------------------------------------------------------
-Ran 13 tests in 0.006s
+Ran 18 tests in 0.008s
 
 OK
 Destroying test database for alias 'default'...
 ```
+
+
 #### Medications
 
 The following unit tests are implemented in the `medications` application, found

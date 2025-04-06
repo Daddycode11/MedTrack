@@ -1,16 +1,23 @@
-from django.test import TestCase
-from django.db.utils import IntegrityError
+from datetime import date, timedelta
+import datetime as dt
+from django.test import TestCase, RequestFactory
 from django.contrib.auth.models import User
+from django.db.utils import IntegrityError
+from django.urls import reverse
+from django.utils.timezone import now
+
 from .models import (
-    MedicalSpecialty,
+    Consultation,
     Physician,
+    MedicalSpecialty,
     ConsultationLocation,
     ConsultationReason,
-    Consultation,
     ConsultationTimeBlock,
 )
-import datetime as dt
+from .views import consultation_calendar
+from .forms import ScheduleConsultationForm
 from pdl.models import PDLProfile  # Ensure this is correctly imported or mocked
+
 
 class PDLProfileModelTest(TestCase):
     def setUp(self):
@@ -157,3 +164,160 @@ class ConsultationModelTest(TestCase):
                 is_an_emergency=False,
                 notes="Duplicate consultation."
             )
+
+class ScheduleConsultationViewTests(TestCase):
+    def setUp(self):
+        # Create a test user
+        self.user = User.objects.create_user(username='testuser', password='testpassword', first_name='Test', last_name='User')
+        self.client.login(username='testuser', password='testpassword')
+
+        # URL for the schedule consultation view
+        self.url = reverse('consultations:schedule_consultation')
+
+    def test_schedule_consultation_get(self):
+        """
+        Test that the schedule consultation page renders correctly with a GET request.
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'consultations/schedule_consultation.html')
+        self.assertIsInstance(response.context['form'], ScheduleConsultationForm)
+
+
+    def test_schedule_consultation_post_invalid_data(self):
+
+        """
+        Test that an invalid POST request does not schedule a consultation.
+        """
+        invalid_data = {
+            'physician': '',
+            'consultation_date_date_only': '',
+            'consultation_time_block': '',
+            'status': '',
+        }
+        response = self.client.post(self.url, data=invalid_data)
+        self.assertEqual(response.status_code, 200)  # Form re-rendered with errors
+        self.assertTemplateUsed(response, 'consultations/schedule_consultation.html')
+        self.assertFalse(Consultation.objects.exists())  # No consultation should be created
+        self.assertTrue(response.context['form'].errors)  # Form should have errors
+
+
+class ScheduleConsultationFormTest(TestCase):
+    def setUp(self):
+        # Create test data for ConsultationLocation and ConsultationReason
+        self.location = ConsultationLocation.objects.create(room_number="Test Location", capacity=5)
+        self.reason = ConsultationReason.objects.create(reason="Test Reason", description="Test Description")
+        self.consultation_time_block = ConsultationTimeBlock.BLOCK_01.name
+
+    def test_form_valid_data(self):
+        form_data = {
+            'consultation_date_date_only': (now() + timedelta(days=1)).date(),
+            'consultation_time_block': self.consultation_time_block,
+            'location': self.location,
+            'reason': self.reason,
+            'is_an_emergency': False,
+            'notes': 'Test notes',
+        }
+        form = ScheduleConsultationForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_form_missing_required_fields(self):
+        form_data = {
+            'consultation_time_block': 'morning',
+            'location': self.location.id,
+            'reason': self.reason.id,
+        }
+        form = ScheduleConsultationForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('consultation_date_date_only', form.errors)
+
+    def test_form_invalid_date(self):
+        form_data = {
+            'consultation_date_date_only': 'invalid-date',
+            'consultation_time_block': 'morning',
+            'location': self.location.id,
+            'reason': self.reason.id,
+            'is_an_emergency': False,
+            'notes': 'Test notes',
+        }
+        form = ScheduleConsultationForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('consultation_date_date_only', form.errors)
+
+    def test_form_invalid_location(self):
+        form_data = {
+            'consultation_date_date_only': (now() + timedelta(days=1)).date(),
+            'consultation_time_block': 'morning',
+            'location': 999,  # Invalid location ID
+            'reason': self.reason.id,
+            'is_an_emergency': False,
+            'notes': 'Test notes',
+        }
+        form = ScheduleConsultationForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('location', form.errors)
+
+class ConsultationCalendarTests(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username="testuser", password="testpassword", first_name="Test", last_name="User")
+        self.user_pdl = User.objects.create_user(username="pdluser", password="testpassword", first_name="PDL", last_name="User")
+        self.location = ConsultationLocation.objects.create(room_number="Test Room", capacity=5)
+        self.reason = ConsultationReason.objects.create(reason="Test Reason", description="Test Description")
+        self.pdl_profile = PDLProfile.objects.create(
+            username=self.user_pdl,
+            phone_number="5551234567"
+        )
+
+        self.physician_specialty = MedicalSpecialty.objects.create(
+            name="General Practice",
+            description="General medical practice."
+        )
+        self.physician = Physician.objects.create(
+            username=self.user,
+            employee_type="full_time",
+            specialty=self.physician_specialty,
+            phone_number="1234567890",
+            address="123 Main St"
+
+        )
+        
+        self.consultation1 = Consultation.objects.create(
+            pdl_profile=self.pdl_profile,
+            physician=self.physician,
+            consultation_date_date_only=date(2023, 10, 15),
+            status="scheduled",
+            location=self.location,
+            reason=self.reason,
+        )
+        self.consultation2 = Consultation.objects.create(
+            pdl_profile=self.pdl_profile,
+            physician=self.physician,
+            consultation_date_date_only=date(2023, 10, 20),
+            status="scheduled",
+            location=self.location,
+            reason=self.reason,
+        )
+
+    def test_consultation_calendar_current_month(self):
+        request = self.factory.get('/?year=2023&month=10')
+        consultations = Consultation.objects.all()
+        context = consultation_calendar(request, consultations)
+
+        self.assertEqual(context['year'], 2023)
+        self.assertEqual(context['month'], 10)
+        self.assertEqual(context['month_name'], "October")
+        self.assertEqual(len(context['calendar_data'][2][6]['consultations']), 1)  # 15th is a Sunday
+        self.assertEqual(len(context['calendar_data'][3][4]['consultations']), 1)  # 20th is a Friday
+
+    def test_consultation_calendar_empty_month(self):
+        request = self.factory.get('/?year=2023&month=11')
+        consultations = Consultation.objects.all()
+        context = consultation_calendar(request, consultations)
+
+        self.assertEqual(context['year'], 2023)
+        self.assertEqual(context['month'], 11)
+        self.assertEqual(context['month_name'], "November")
+        for week in context['calendar_data']:
+            for day in week:
+                self.assertEqual(len(day['consultations']), 0)  # No consultations in November

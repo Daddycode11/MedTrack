@@ -1,4 +1,25 @@
 from django.urls import path
+
+"""
+URL configuration for the consultations app.
+
+This module defines the URL patterns for the consultations app, mapping
+specific URL paths to their corresponding view functions. These URLs handle
+various functionalities such as viewing the doctor dashboard, managing
+consultation schedules, and handling consultation cancellations and rescheduling.
+
+Routes:
+- doctor-dashboard: Displays the doctor's dashboard.
+- calendar/: Displays all consultations in a calendar view.
+- calendar-physician/<int:physician_id>/: Displays consultations filtered by a specific physician.
+- schedule/: Allows scheduling a new consultation.
+- cancel/<int:consultation_id>/: Cancels a specific consultation.
+- reschedule/<int:consultation_id>/: Reschedules a specific consultation.
+
+Namespace:
+- app_name: 'consultations' (used for namespacing URLs in templates and reverse lookups).
+"""
+
 from . import views
 
 app_name = 'consultations'
