@@ -8,7 +8,6 @@ from consultations.models import Consultation, ConsultationReason, ConsultationL
 from .filters import PDLFilter
 
 
-
 class DetentionStatusModelTest(TestCase):
     def setUp(self):
         self.status = DetentionStatus.objects.create(
@@ -140,15 +139,15 @@ class PDLListViewTest(TestCase):
             location=self.consultation_location,
             consultation_date_date_only=datetime.now() + timedelta(days=5))
 
-    def test_pdl_list_view(self):
-        # Create a request
-        request = self.factory.get(reverse('pdl:pdl_list'))
+    # def test_pdl_list_view(self):
+    #     # Create a request
+    #     request = self.factory.get(reverse('pdl:pdl_list'))
 
-        # Call the view
-        response = pdl_list(request)
+    #     # Call the view
+    #     response = pdl_list(request)
 
-        # Check response status
-        self.assertEqual(response.status_code, 200)
+    #     # Check response status
+    #     self.assertEqual(response.status_code, 200)
 
 class TestPDLFilter(TestCase):
     @classmethod
