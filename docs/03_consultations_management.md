@@ -1,8 +1,27 @@
 # 03. Consultations Application
 
+## Table of Contents
+1. [SQL Data Model](#sql-data-model)
+    - [MedicalSpecialty](#medicalspecialty)
+    - [Physician](#physician)
+    - [ConsultationLocation](#consultationlocation)
+    - [ConsultationReason](#consultationreason)
+    - [ConsultationTimeBlock](#consultationtimeblock)
+    - [Consultation](#consultation)
+2. [Views, URLs, and Forms](#views-urls-and-forms)
+    - [consultation_calendar](#consultation_calendar)
+    - [all_consultations](#all_consultations)
+    - [consultations_by_physician](#consultations_by_physician)
+    - [doctor_dashboard](#doctor_dashboard)
+    - [schedule_consultation](#schedule_consultation)
+    - [cancel_consultation](#cancel_consultation)
+    - [reschedule_consultation](#reschedule_consultation)
+3. [Consultations App URL Configuration](#consultations-app-url-configuration)
+    - [Routes](#routes)
+    - [Namespace](#namespace)
+    - [URL Patterns](#url-patterns)
 
-
-## Data model
+## SQL Data Model
 
 ![Consultations Schema](img/schema_consultations.png)
 
@@ -110,15 +129,15 @@ Represents a consultation.
   - `verbose_name_plural`: "Consultations".
   - `ordering`: Ordered by `consultation_date_date_only` and `consultation_time_block`.
   - **Constraints**:
-    - Unique consultation per PDL profile, date, and time block.
-    - Unique consultation per physician, date, and time block.
-    - Unique consultation per location, date, and time block.
+     - Unique consultation per PDL profile, date, and time block.
+     - Unique consultation per physician, date, and time block.
+     - Unique consultation per location, date, and time block.
 
 - **Methods**:
   - `__str__`: Returns a string representation of the consultation, including the physician, date, time block, and location.
   - `consultation_time_block_display`: Returns the display value of the consultation time block.
 
-##  Views, URLS and Forms
+## Views, URLs, and Forms
 
 ### `consultation_calendar`
 
@@ -257,12 +276,12 @@ from . import views
 app_name = 'consultations'
 
 urlpatterns = [
-    path('doctor-dashboard', views.doctor_dashboard, name='doctor_dashboard'),
-    path('calendar/', views.all_consultations, name='consultation_calendar'),
-    path('calendar-physician/<int:physician_id>/', views.consultations_by_physician, name='consultation_calendar_physician'),
-    path('schedule/', views.schedule_consultation, name='schedule_consultation'),
-    path('cancel/<int:consultation_id>/', views.cancel_consultation, name='cancel_consultation'),
-    path('reschedule/<int:consultation_id>/', views.reschedule_consultation, name='reschedule_consultation'),
-    # Other URLs...
+     path('doctor-dashboard', views.doctor_dashboard, name='doctor_dashboard'),
+     path('calendar/', views.all_consultations, name='consultation_calendar'),
+     path('calendar-physician/<int:physician_id>/', views.consultations_by_physician, name='consultation_calendar_physician'),
+     path('schedule/', views.schedule_consultation, name='schedule_consultation'),
+     path('cancel/<int:consultation_id>/', views.cancel_consultation, name='cancel_consultation'),
+     path('reschedule/<int:consultation_id>/', views.reschedule_consultation, name='reschedule_consultation'),
+     # Other URLs...
 ]
 ```
