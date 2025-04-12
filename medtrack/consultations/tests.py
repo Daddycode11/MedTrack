@@ -5,6 +5,9 @@ from django.contrib.auth.models import User
 from django.db.utils import IntegrityError
 from django.urls import reverse
 from django.utils.timezone import now
+from django.http import JsonResponse
+from .views import consultation_time_block_list_api
+from .models import ConsultationTimeBlock, ConsultationReason, ConsultationLocation
 
 from .models import (
     Consultation,
@@ -337,11 +340,6 @@ class ConsultationCalendarTests(TestCase):
                 self.assertEqual(len(day['consultations']), 0)  # No consultations in November
 
 
-from django.test import TestCase
-from django.urls import reverse
-from .views import consultation_time_block_list_api
-from .models import ConsultationTimeBlock
-
 class ConsultationTimeBlockListAPITest(TestCase):
     def test_consultation_time_block_list_api(self):
         """
@@ -373,3 +371,83 @@ class ConsultationTimeBlockListAPITest(TestCase):
         self.assertEqual(ConsultationTimeBlock.BLOCK_08_00.value[1], "8:00 AM")
         self.assertEqual(ConsultationTimeBlock.BLOCK_13_30.value[1], "1:30 PM")
         self.assertEqual(ConsultationTimeBlock.BLOCK_17_00.value[1], "5:00 PM")
+
+class ConsultationReasonListAPITest(TestCase):
+    def setUp(self):
+        # Create sample consultation reasons
+        ConsultationReason.objects.create(reason="Reason 1", description="Description 1")
+        ConsultationReason.objects.create(reason="Reason 2", description="Description 2")
+
+    def test_consultation_reason_list_api(self):
+        # Call the API endpoint
+        response = self.client.get(reverse('consultations:consultation_reason_list_api'))
+
+        # Assert the response status code
+        self.assertEqual(response.status_code, 200)
+
+        # Assert the response is a JSON response
+        self.assertIsInstance(response, JsonResponse)
+
+        # Parse the JSON response
+        data = response.json()
+
+        # Assert the response contains the correct number of reasons
+        self.assertEqual(len(data), 2)
+
+        # Assert the content of the response
+        self.assertEqual(data[0]['reason'], "Reason 1")
+        self.assertEqual(data[0]['description'], "Description 1")
+        self.assertEqual(data[1]['reason'], "Reason 2")
+        self.assertEqual(data[1]['description'], "Description 2")
+
+
+class LocationListAPITestCase(TestCase):
+    def setUp(self):
+        # Create test data for ConsultationLocation
+        ConsultationLocation.objects.create(id=1, room_number="101", capacity=10)
+        ConsultationLocation.objects.create(id=2, room_number="102", capacity=10)
+        ConsultationLocation.objects.create(id=3, room_number="103", capacity=10)
+
+    def test_location_list_api(self):
+        # Call the API endpoint
+        response = self.client.get(reverse('consultations:location_list_api'))
+
+        # Assert the response status code
+        self.assertEqual(response.status_code, 200)
+
+        # Assert the response data
+        expected_data = [
+            {'id': 1, 'room_number': "101"},
+            {'id': 2, 'room_number': "102"},
+            {'id': 3, 'room_number': "103"},
+        ]
+        self.assertJSONEqual(response.content, expected_data)
+
+    def setUp(self):
+        # Create test users and physicians
+        user1 = User.objects.create_user(username="doc1", first_name="John", last_name="Doe", email="john.doe@example.com")
+        user2 = User.objects.create_user(username="doc2", first_name="Jane", last_name="Smith", email="jane.smith@example.com")
+        Physician.objects.create(username=user1)
+        Physician.objects.create(username=user2)
+
+    def test_physician_list_api(self):
+        # Call the API endpoint
+        response = self.client.get(reverse('physician_list_api'))
+
+        # Assert the response status code
+        self.assertEqual(response.status_code, 200)
+
+        # Assert the response data
+        expected_data = [
+            {
+                'id': Physician.objects.get(username__username="doc1").id,
+                'name': "John Doe",
+                'email': "john.doe@example.com",
+            },
+            {
+                'id': Physician.objects.get(username__username="doc2").id,
+                'name': "Jane Smith",
+                'email': "jane.smith@example.com",
+            },
+        ]
+        self.assertEqual(response.json(), expected_data)
