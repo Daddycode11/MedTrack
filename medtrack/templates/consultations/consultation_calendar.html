@@ -141,7 +141,7 @@ Consultation Calendar
         </table>
     </div>
     <div class="modal fade" id="addConsultationModal" tabindex="-1" aria-labelledby="addConsultationModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addConsultationModalLabel">
@@ -152,8 +152,13 @@ Consultation Calendar
                 <div class="modal-body p-4">
                     <form method="post" action="{% url 'consultations:create_consultation' %}" id="addConsultationForm">
                         {% csrf_token %}
-                        <input type="hidden" name="date" id="consultationDate">
-                        
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Date</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                                <input type="date" class="form-control" name="date" id="consultationDate" required>
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label small text-muted">Time</label>
                             <div class="input-group">
@@ -229,6 +234,22 @@ Consultation Calendar
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const addConsultationModal = document.getElementById('addConsultationModal');
+    const dateInput = document.getElementById('consultationDate');
+
+    function setDateConstraints(dateInput) {
+        // Set min date to today
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        // Set max date to 6 months from today
+        const maxDate = new Date(today);
+        maxDate.setMonth(maxDate.getMonth() + 6);
+        
+        // Format dates for input
+        dateInput.min = tomorrow.toISOString().split('T')[0];
+        dateInput.max = maxDate.toISOString().split('T')[0];
+    }
 
     async function loadOptions(selectElement) {
         const dataUrl = selectElement.getAttribute('data-url');
@@ -323,13 +344,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (addConsultationModal) {
+        // Set date constraints on load
+        setDateConstraints(dateInput);
+
         // Handle modal show event
         addConsultationModal.addEventListener('show.bs.modal', function(event) {
-            // Set consultation date
             const button = event.relatedTarget;
-            const consultationDate = button.getAttribute('data-consultation-date');
-            const dateInput = document.getElementById('consultationDate');
-            dateInput.value = consultationDate;
+            const selectedDate = button.getAttribute('data-consultation-date');
+            
+            // Validate and set the selected date
+            const selectedDateObj = new Date(selectedDate);
+            const today = new Date();
+            const maxDate = new Date(today);
+            maxDate.setMonth(maxDate.getMonth() + 6);
+
+            if (selectedDateObj > today && selectedDateObj <= maxDate) {
+                dateInput.value = selectedDate;
+            } else {
+                dateInput.value = new Date(today.setDate(today.getDate() + 1)).toISOString().split('T')[0];
+            }
 
             // Load all select options
             const selects = [
@@ -341,6 +374,22 @@ document.addEventListener('DOMContentLoaded', function() {
             ].map(id => document.getElementById(id));
             
             selects.forEach(select => loadOptions(select));
+        });
+
+        // Date input change handler
+        dateInput.addEventListener('change', function(e) {
+            const selectedDate = new Date(this.value);
+            const today = new Date();
+            const maxDate = new Date(today);
+            maxDate.setMonth(maxDate.getMonth() + 6);
+
+            if (selectedDate <= today) {
+                alert('Please select a future date');
+                this.value = new Date(today.setDate(today.getDate() + 1)).toISOString().split('T')[0];
+            } else if (selectedDate > maxDate) {
+                alert('Please select a date within the next 6 months');
+                this.value = maxDate.toISOString().split('T')[0];
+            }
         });
 
         // Form validation and submission
