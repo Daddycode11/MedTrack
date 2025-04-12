@@ -33,10 +33,17 @@ Consultation Calendar
                         {% if day.day %}
                         <h5 class="fw-semibold">{{ day.day }}</h5>
                         <div>
+                            <div class="position-absolute top-0 end-0 me-2 mt-2">
+                                <a href="#" class="text-muted" data-bs-toggle="modal" data-bs-target="#addConsultationModal" 
+                                   data-consultation-date="{{ year }}-{{ month }}-{{ day.day }}">
+                                    <i class="bi bi-plus fs-5"></i>
+                                </a>
+                            </div>
                             {% if day.consultations %}
                                 {% for consultation in day.consultations %}
                                 <div class="card p-2 small mb-2" data-bs-toggle="modal" data-bs-target="#consultationModal{{ consultation.id }}">
-                                    <strong>{{ consultation.consultation_time_block_display }}</strong> {{ consultation.pdl_profile }}
+                                    <strong>{{ consultation.get_consultation_time_block_display }}</strong>
+                                    {{ consultation.pdl_profile }}
                                     <span class="d-block text-muted small"> {{ consultation.location }} | {{ consultation.physician }} </span>
                                     {% if consultation.status != "canceled" %}
                                     <span class="text-success"><i class="bi bi-circle-fill small pe-2"></i>{{ consultation.status|capfirst }}</span>
@@ -44,7 +51,7 @@ Consultation Calendar
                                     <span class="text-danger"><i class="bi bi-circle-fill small pe-2"></i>{{ consultation.status|capfirst }}</span>
                                     {% endif %}
                                 </div>
-
+                                
                                 <!-- Modal -->
                                 <div class="modal fade" id="consultationModal{{ consultation.id }}" tabindex="-1" aria-labelledby="consultationModalLabel{{ consultation.id }}" aria-hidden="true">
                                     <div class="modal-dialog">
@@ -58,7 +65,7 @@ Consultation Calendar
                                                     <i class="bi bi-clock text-secondary me-3 fs-5"></i>
                                                     <div>
                                                         <p class="small text-muted mb-0">Time</p>
-                                                        <p class="mb-0">{{ consultation.consultation_time_block_display }}</p>
+                                                        <p class="mb-0">{{ consultation.get_consultation_time_block_display }}</p>
                                                     </div>
                                                 </div>
                                                 
@@ -133,5 +140,258 @@ Consultation Calendar
             </tbody>
         </table>
     </div>
+    <div class="modal fade" id="addConsultationModal" tabindex="-1" aria-labelledby="addConsultationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addConsultationModalLabel">
+                        <i class="bi bi-calendar-plus pe-2"></i>Add Consultation
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form method="post" action="{% url 'consultations:create_consultation' %}" id="addConsultationForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="date" id="consultationDate">
+                        
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Time</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-clock"></i></span>
+                                <select class="form-select" name="time" id="timeSelect" required data-url="{% url 'consultations:consultation_time_block_list_api' %}">
+                                    <option value="">Loading Times...</option>
+                                </select>
+                            </div>
+                            <div class="form-text small mb-2">Office hours: 8:00 AM - 5:00 PM</div>
+                        </div>
+    
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">PDL</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person-circle"></i></span>
+                                <select class="form-select" name="pdl" id="pdlSelect" required data-url="{% url 'consultations:pdl_list_api' %}">
+                                    <option value="">Loading PDLs...</option>
+                                </select>                                
+                            </div>
+                        </div>
+    
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Location</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                                <select class="form-select" name="location" id="locationSelect" required data-url="{% url 'consultations:location_list_api' %}">
+                                    <option value="">Loading Locations...</option>
+                                </select>
+                            </div>
+                        </div>
+    
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Physician</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                                <select class="form-select" name="physician" id="physicianSelect" required data-url="{% url 'consultations:physician_list_api' %}">
+                                    <option value="">Loading Physicians...</option>
+                                </select>
+                            </div>
+                        </div>
+    
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Reason</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-chat-quote"></i></span>
+                                <select class="form-select" name="reason" id="reasonSelect" required data-url="{% url 'consultations:consultation_reason_list_api' %}">
+                                    <option value="">Loading Reasons...</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Notes</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-journal-text"></i></span>
+                                <textarea class="form-control" name="notes" id="notesField" rows="3" 
+                                          placeholder="Add any additional notes or important information..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-2"></i>Add Consultation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addConsultationModal = document.getElementById('addConsultationModal');
+
+    async function loadOptions(selectElement) {
+        const dataUrl = selectElement.getAttribute('data-url');
+        if (!dataUrl) return;
+
+        try {
+            const response = await fetch(dataUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            let defaultText = 'Select...';
+            switch(selectElement.id) {
+                case 'pdlSelect':
+                    defaultText = 'Select PDL...';
+                    break;
+                case 'physicianSelect':
+                    defaultText = 'Select Physician...';
+                    break;
+                case 'locationSelect':
+                    defaultText = 'Select Location...';
+                    break;
+                case 'reasonSelect':
+                    defaultText = 'Select Reason...';
+                    break;
+                case 'timeSelect':
+                    defaultText = 'Select Time...';
+                    break;
+            }
+            
+            selectElement.innerHTML = `<option value="">${defaultText}</option>`;
+            
+            data.forEach(item => {
+                const option = document.createElement('option');
+                
+                switch(selectElement.id) {
+                    case 'timeSelect':
+                        option.value = item.value;
+                        option.textContent = item.display;
+                        break;
+                    case 'pdlSelect':
+                    case 'physicianSelect':
+                        option.value = item.id;
+                        option.textContent = item.name;
+                        break;
+                    case 'locationSelect':
+                        option.value = item.id;
+                        option.textContent = item.room_number;
+                        break;
+                    case 'reasonSelect':
+                        option.value = item.id;
+                        option.textContent = item.reason;
+                        if (item.description) {
+                            option.title = item.description;
+                            option.setAttribute('data-bs-toggle', 'tooltip');
+                        }
+                        break;
+                }
+                
+                selectElement.appendChild(option);
+            });
+
+            // Initialize tooltips for new options
+            if (selectElement.id === 'reasonSelect') {
+                const tooltips = selectElement.querySelectorAll('[data-bs-toggle="tooltip"]');
+                tooltips.forEach(el => new bootstrap.Tooltip(el));
+            }
+
+        } catch (error) {
+            console.error('Error fetching options:', error);
+            let errorText = 'Failed to load';
+            switch(selectElement.id) {
+                case 'pdlSelect':
+                    errorText = 'Failed to load PDLs';
+                    break;
+                case 'physicianSelect':
+                    errorText = 'Failed to load Physicians';
+                    break;
+                case 'locationSelect':
+                    errorText = 'Failed to load Locations';
+                    break;
+                case 'reasonSelect':
+                    errorText = 'Failed to load Reasons';
+                    break;
+                case 'timeSelect':
+                    errorText = 'Failed to load Times';
+                    break;
+            }
+            selectElement.innerHTML = `<option value="">${errorText}</option>`;
+        }
+    }
+
+    if (addConsultationModal) {
+        // Handle modal show event
+        addConsultationModal.addEventListener('show.bs.modal', function(event) {
+            // Set consultation date
+            const button = event.relatedTarget;
+            const consultationDate = button.getAttribute('data-consultation-date');
+            const dateInput = document.getElementById('consultationDate');
+            dateInput.value = consultationDate;
+
+            // Load all select options
+            const selects = [
+                'timeSelect',
+                'pdlSelect',
+                'locationSelect',
+                'physicianSelect',
+                'reasonSelect'
+            ].map(id => document.getElementById(id));
+            
+            selects.forEach(select => loadOptions(select));
+        });
+
+        // Form validation and submission
+        const form = document.getElementById('addConsultationForm');
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!form.checkValidity()) {
+                e.stopPropagation();
+                form.classList.add('was-validated');
+                return;
+            }
+
+            const formData = new FormData(form);
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to create consultation');
+                }
+
+                // Show success message and reload
+                const modal = bootstrap.Modal.getInstance(addConsultationModal);
+                modal.hide();
+                window.location.reload();
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.message || 'Failed to create consultation. Please try again.');
+            }
+        });
+
+        // Reset form on modal close
+        addConsultationModal.addEventListener('hidden.bs.modal', function() {
+            const form = document.getElementById('addConsultationForm');
+            form.reset();
+            form.classList.remove('was-validated');
+        });
+    }
+
+    // Initialize all tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+});
+</script>
+    
 {% endblock %}

@@ -287,3 +287,116 @@ def reschedule_consultation(request, consultation_id):
         form = ScheduleConsultationForm(instance=consultation)
 
     return render(request, 'consultations/reschedule_consultation.html', {'form': form, 'consultation': consultation})
+
+
+
+from django.shortcuts import redirect
+from django.contrib import messages
+import datetime as dt
+
+def create_consultation(request):
+    if request.method == 'POST':
+        try:
+            # Extract and parse form data
+            date_str = request.POST.get('date')
+            time_block = request.POST.get('time')  # This will now be the enum name
+            
+            # Convert date string to date object
+            consultation_date = dt.datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            # Validate the time block
+            if not hasattr(ConsultationTimeBlock, time_block):
+                raise ValueError(f'Invalid time block selected: {time_block}')
+
+            # Get related objects
+            pdl = get_object_or_404(PDLProfile, id=request.POST.get('pdl'))
+            location = get_object_or_404(ConsultationLocation, id=request.POST.get('location'))
+            physician = get_object_or_404(Physician, id=request.POST.get('physician'))
+            reason = get_object_or_404(ConsultationReason, id=request.POST.get('reason'))
+            is_an_emergency = request.POST.get('is_an_emergency') == 'on'
+            notes = request.POST.get('notes')
+
+            # Create and save the consultation
+            Consultation.objects.create(
+                consultation_date_date_only=consultation_date,
+                consultation_time_block=time_block,
+                pdl_profile=pdl,
+                location=location,
+                physician=physician,
+                reason=reason,
+                status='scheduled',
+                is_an_emergency=is_an_emergency,
+                notes=notes
+            )
+
+            messages.success(request, 'Consultation scheduled successfully.')
+            return redirect('consultations:consultation_calendar')
+
+        except Exception as e:
+            messages.error(request, f'Error scheduling consultation: {str(e)}')
+            return redirect('consultations:create_consultation')
+
+    return render(request, 'consultations/create_consultation.html')
+    
+from django.http import JsonResponse
+from pdl.models import PDLProfile
+from .models import Physician, ConsultationLocation, ConsultationReason, ConsultationTimeBlock
+
+def pdl_list_api(request):
+    pdls = PDLProfile.objects.all()
+    formatted_pdls = [
+        {
+            'id': pdl.id,
+            'name': f"{pdl.username.first_name} {pdl.username.last_name}",
+            'email': pdl.username.email,
+        }
+        for pdl in pdls
+    ]
+    return JsonResponse(formatted_pdls, safe=False)
+
+
+def physician_list_api(request):
+    physicians = Physician.objects.all()
+    formatted_physicians = [
+        {
+            'id': physician.id,
+            'name': f"{physician.username.first_name} {physician.username.last_name}",
+            'email': physician.username.email,
+        }
+        for physician in physicians
+    ]
+    return JsonResponse(formatted_physicians, safe=False)
+
+def location_list_api(request):
+    locations = ConsultationLocation.objects.all()
+    formatted_locations = [
+        {
+            'id': location.id,
+            'room_number': location.room_number
+        }
+        for location in locations
+    ]
+    return JsonResponse(formatted_locations, safe=False)
+
+def consultation_reason_list_api(request):
+    reasons = ConsultationReason.objects.all()
+    formatted_reasons = [
+        {
+            'id': reason.id,
+            'reason': reason.reason,
+            'description': reason.description
+        }
+        for reason in reasons
+    ]
+    return JsonResponse(formatted_reasons, safe=False)
+
+def consultation_time_block_list_api(request):
+    time_blocks = []
+    for block in ConsultationTimeBlock:
+        # Only include office hours
+        if "08:00" <= block.value[0] <= "17:00":
+            time_blocks.append({
+                'value': block.name,  # Send the enum name instead of the time
+                'display': block.value[1]  # Send the formatted display time
+            })
+    return JsonResponse(time_blocks, safe=False)
