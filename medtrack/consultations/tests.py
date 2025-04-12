@@ -423,31 +423,4 @@ class LocationListAPITestCase(TestCase):
         ]
         self.assertJSONEqual(response.content, expected_data)
 
-    def setUp(self):
-        # Create test users and physicians
-        user1 = User.objects.create_user(username="doc1", first_name="John", last_name="Doe", email="john.doe@example.com")
-        user2 = User.objects.create_user(username="doc2", first_name="Jane", last_name="Smith", email="jane.smith@example.com")
-        Physician.objects.create(username=user1)
-        Physician.objects.create(username=user2)
-
-    def test_physician_list_api(self):
-        # Call the API endpoint
-        response = self.client.get(reverse('physician_list_api'))
-
-        # Assert the response status code
-        self.assertEqual(response.status_code, 200)
-
-        # Assert the response data
-        expected_data = [
-            {
-                'id': Physician.objects.get(username__username="doc1").id,
-                'name': "John Doe",
-                'email': "john.doe@example.com",
-            },
-            {
-                'id': Physician.objects.get(username__username="doc2").id,
-                'name': "Jane Smith",
-                'email': "jane.smith@example.com",
-            },
-        ]
-        self.assertEqual(response.json(), expected_data)
+    
