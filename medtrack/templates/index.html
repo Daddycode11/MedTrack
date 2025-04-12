@@ -8,17 +8,8 @@ Home - Medtrack
 <div class="text-center mx-5 my-3">
     <h1 class="mt-5 mt-3">Welcome to Medtrack</h1>
     <p class="lead mb-5 pb-3">Your trusted platform for scheduling and tracking medical consultations for PDLs.</p>
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <div class="card py-5 h-100 shadow">
-                <div class="card-body text-center">
-                    <i class="bi bi-person-circle display-4"></i>
-                    <h5 class="card-title mt-3">PDL Dashboard</h5>
-                    <p class="card-text">Access your personal dashboard to view and manage your consultations.</p>
-                    <a href="{% url 'pdl:pdl_profile' %}" class="btn btn-primary">Go to PDL Dashboard</a>
-                </div>
-            </div>
-        </div>
+    <div class="row mt-4 alig">
+        <div class="col-md-2"></div>
         <div class="col-md-4">
             <div class="card py-5 h-100 shadow">
                 <div class="card-body text-center">
@@ -39,6 +30,8 @@ Home - Medtrack
                 </div>
             </div>
         </div>
+        <div class="col-md-2"></div>
+
     </div>
 </div>
 {% endblock %}

@@ -45,7 +45,6 @@ PDL List - Medtrack
     <table class="table table-hover table-sm">
         <thead>
             <tr>
-                <th rowspan="2" class="align-middle ">ID</th>
                 <th rowspan="2" class="align-middle">Name</th>
                 <th colspan="5" class="detention-details-header text-center">Detention Details</th>
                 <th rowspan="2" class="align-middle">Actions</th>
@@ -61,15 +60,14 @@ PDL List - Medtrack
         <tbody>
             {% for pdl in page_obj %}
             <tr>
-                <td>{{ pdl.id }}</td>
-                <td>{{ pdl.pdl_profile }}</td>
+                <td class="fw-medium"><a href="{% url 'pdl:pdl_profile_by_id' pdl.pdl_profile.username %}" class="text-decoration-none">{{ pdl.pdl_profile }}</a></td>
                 <td>{{ pdl.detention_status }}</td>
                 <td>{{ pdl.detention_reason }}</td>
                 <td>{{ pdl.detention_term_length }}</td>
                 <td>{{ pdl.detention_start_date }}</td>
                 <td>{{ pdl.detention_end_date }}</td>
                 <td>
-                    <a href="{% url 'pdl:pdl_profile_by_id' pdl.id %}" class="btn btn-sm btn-outline-primary position-relative" data-bs-toggle="tooltip" data-bs-placement="top" title="View PDL Profile">
+                    <a href="{% url 'pdl:pdl_profile_by_id' pdl.pdl_profile.username %}" class="btn btn-sm btn-outline-primary position-relative" data-bs-toggle="tooltip" data-bs-placement="top" title="View PDL Profile">
                         <i class="bi bi-person"></i>
                         {% if pdl.consultation_count > 0 %}
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
