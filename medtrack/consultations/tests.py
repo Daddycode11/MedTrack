@@ -127,7 +127,7 @@ class ConsultationModelTest(TestCase):
             reason=self.reason,
             status="scheduled",
             consultation_date_date_only=dt.datetime(2025, 4, 5),
-            consultation_time_block=ConsultationTimeBlock.BLOCK_17.name,
+            consultation_time_block=ConsultationTimeBlock.BLOCK_17_00.name,  # Updated to use new enum name
             is_an_emergency=False,
             notes="Patient has mild symptoms."
         )
@@ -138,17 +138,18 @@ class ConsultationModelTest(TestCase):
         self.assertEqual(self.consultation.reason, self.reason)
         self.assertEqual(self.consultation.status, "scheduled")
         self.assertEqual(self.consultation.consultation_date_date_only.strftime('%Y-%m-%d'), "2025-04-05")
-        self.assertEqual(self.consultation.consultation_time_block, ConsultationTimeBlock.BLOCK_17.name)
+        self.assertEqual(
+            self.consultation.consultation_time_block, 
+            ConsultationTimeBlock.BLOCK_17_00.name
+        )
         self.assertFalse(self.consultation.is_an_emergency)
         self.assertEqual(self.consultation.notes, "Patient has mild symptoms.")
 
     def test_consultation_str(self):
-        block_name = self.consultation.consultation_time_block
-        block_value = ConsultationTimeBlock[block_name].value[1]
+        expected_time = ConsultationTimeBlock.BLOCK_17_00.value[1]  # "5:00 PM"
         self.assertEqual(
             str(self.consultation),
-            f"Consultation with {self.physician} on {self.consultation.consultation_date_date_only.strftime('%d %B %Y')} at {block_value} in {self.location.room_number}"
-
+            f"Consultation with {self.physician} on {self.consultation.consultation_date_date_only.strftime('%d %B %Y')} at {expected_time} in {self.location.room_number}"
         )
 
     def test_unique_constraints(self):
@@ -160,7 +161,7 @@ class ConsultationModelTest(TestCase):
                 reason=self.reason,
                 status="scheduled",
                 consultation_date_date_only="2025-04-05",
-                consultation_time_block=ConsultationTimeBlock.BLOCK_17.name,
+                consultation_time_block=ConsultationTimeBlock.BLOCK_17_00.name,  # Updated
                 is_an_emergency=False,
                 notes="Duplicate consultation."
             )
@@ -207,12 +208,12 @@ class ScheduleConsultationFormTest(TestCase):
         # Create test data for ConsultationLocation and ConsultationReason
         self.location = ConsultationLocation.objects.create(room_number="Test Location", capacity=5)
         self.reason = ConsultationReason.objects.create(reason="Test Reason", description="Test Description")
-        self.consultation_time_block = ConsultationTimeBlock.BLOCK_01.name
+        self.consultation_time_block = ConsultationTimeBlock.BLOCK_08_00.name  # Updated
 
     def test_form_valid_data(self):
         form_data = {
             'consultation_date_date_only': (now() + timedelta(days=1)).date(),
-            'consultation_time_block': self.consultation_time_block,
+            'consultation_time_block': ConsultationTimeBlock.BLOCK_09_00.name,  # Updated
             'location': self.location,
             'reason': self.reason,
             'is_an_emergency': False,
@@ -256,6 +257,19 @@ class ScheduleConsultationFormTest(TestCase):
         form = ScheduleConsultationForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn('location', form.errors)
+
+    def test_form_invalid_time_block(self):
+        form_data = {
+            'consultation_date_date_only': (now() + timedelta(days=1)).date(),
+            'consultation_time_block': 'INVALID_BLOCK',  # Should be invalid
+            'location': self.location.id,
+            'reason': self.reason.id,
+            'is_an_emergency': False,
+            'notes': 'Test notes',
+        }
+        form = ScheduleConsultationForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('consultation_time_block', form.errors)
 
 class ConsultationCalendarTests(TestCase):
     def setUp(self):
@@ -321,3 +335,41 @@ class ConsultationCalendarTests(TestCase):
         for week in context['calendar_data']:
             for day in week:
                 self.assertEqual(len(day['consultations']), 0)  # No consultations in November
+
+
+from django.test import TestCase
+from django.urls import reverse
+from .views import consultation_time_block_list_api
+from .models import ConsultationTimeBlock
+
+class ConsultationTimeBlockListAPITest(TestCase):
+    def test_consultation_time_block_list_api(self):
+        """
+        Test the consultation_time_block_list_api view to ensure it returns
+        the correct time blocks within office hours (08:00 to 17:00).
+        """
+        # Call the API endpoint
+        response = self.client.get(reverse('consultations:consultation_time_block_list_api'))
+
+        # Assert the response status code is 200 (OK)
+        self.assertEqual(response.status_code, 200)
+
+        # Parse the JSON response
+        time_blocks = response.json()
+
+        # Assert the response is a list
+        self.assertIsInstance(time_blocks, list)
+
+        # Assert all time blocks are within office hours
+        for block in time_blocks:
+            self.assertIn('value', block)
+            self.assertIn('display', block)
+            time_value = ConsultationTimeBlock[block['value']].value[0]
+            self.assertGreaterEqual(time_value, "08:00")
+            self.assertLessEqual(time_value, "17:00")
+
+    def test_time_block_enum_values(self):
+        # Test a few specific time blocks
+        self.assertEqual(ConsultationTimeBlock.BLOCK_08_00.value[1], "8:00 AM")
+        self.assertEqual(ConsultationTimeBlock.BLOCK_13_30.value[1], "1:30 PM")
+        self.assertEqual(ConsultationTimeBlock.BLOCK_17_00.value[1], "5:00 PM")
