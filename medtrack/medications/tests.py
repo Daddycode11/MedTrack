@@ -1,7 +1,7 @@
+from datetime import date
 from django.test import TestCase, RequestFactory
 from django.contrib.auth.models import User
 from django.urls import reverse
-from datetime import date, timedelta
 from django_filters import FilterSet
 from .filters import MedicationFilter
 from .models import (
@@ -14,15 +14,15 @@ from .models import (
 )
 from pdl.models import PDLProfile
 from consultations.models import Physician, MedicalSpecialty
-from .views import medication_list
 
 
 
 class PharmacistModelTest(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(username="pharmacist1", first_name="John", last_name="Doe Pharmacist")
-        self.pharmacist = Pharmacist.objects.create(
-            username=self.user,
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(username="pharmacist1", first_name="John", last_name="Doe Pharmacist")
+        cls.pharmacist = Pharmacist.objects.create(
+            username=cls.user,
             employee_type="full_time",
             phone_number="1234567890",
             address="123 Main St"
@@ -38,8 +38,9 @@ class PharmacistModelTest(TestCase):
 
 
 class MedicationTypeModelTest(TestCase):
-    def setUp(self):
-        self.medication_type = MedicationType.objects.create(name="Antibiotic")
+    @classmethod
+    def setUpTestData(cls):
+        cls.medication_type = MedicationType.objects.create(name="Antibiotic")
 
     def test_medication_type_creation(self):
         self.assertEqual(self.medication_type.name, "Antibiotic")
@@ -49,11 +50,12 @@ class MedicationTypeModelTest(TestCase):
 
 
 class MedicationGenericNameModelTest(TestCase):
-    def setUp(self):
-        self.medication_type = MedicationType.objects.create(name="Antibiotic")
-        self.generic_name = MedicationGenericName.objects.create(
+    @classmethod
+    def setUpTestData(cls):
+        cls.medication_type = MedicationType.objects.create(name="Antibiotic")
+        cls.generic_name = MedicationGenericName.objects.create(
             name="Amoxicillin",
-            medication_type=self.medication_type
+            medication_type=cls.medication_type
         )
 
     def test_generic_name_creation(self):
@@ -65,15 +67,16 @@ class MedicationGenericNameModelTest(TestCase):
 
 
 class MedicationModelTest(TestCase):
-    def setUp(self):
-        self.medication_type = MedicationType.objects.create(name="Antibiotic")
-        self.generic_name = MedicationGenericName.objects.create(
+    @classmethod
+    def setUpTestData(cls):
+        cls.medication_type = MedicationType.objects.create(name="Antibiotic")
+        cls.generic_name = MedicationGenericName.objects.create(
             name="Amoxicillin",
-            medication_type=self.medication_type
+            medication_type=cls.medication_type
         )
-        self.medication = Medication.objects.create(
+        cls.medication = Medication.objects.create(
             name="Amoxil",
-            generic_name=self.generic_name,
+            generic_name=cls.generic_name,
             dosage_form="tablet",
             strength="500mg",
             route_of_administration="oral",
@@ -93,24 +96,25 @@ class MedicationModelTest(TestCase):
 
 
 class MedicationInventoryModelTest(TestCase):
-    def setUp(self):
-        self.medication_type = MedicationType.objects.create(name="Antibiotic")
-        self.generic_name = MedicationGenericName.objects.create(
+    @classmethod
+    def setUpTestData(cls):
+        cls.medication_type = MedicationType.objects.create(name="Antibiotic")
+        cls.generic_name = MedicationGenericName.objects.create(
             name="Amoxicillin",
-            medication_type=self.medication_type
+            medication_type=cls.medication_type
         )
-        self.medication = Medication.objects.create(
+        cls.medication = Medication.objects.create(
             name="Amoxil",
-            generic_name=self.generic_name,
+            generic_name=cls.generic_name,
             dosage_form="tablet",
             strength="500mg",
             route_of_administration="oral",
             manufacturer="PharmaCorp"
         )
-        self.inventory = MedicationInventory.objects.create(
-            medication=self.medication,
+        cls.inventory = MedicationInventory.objects.create(
+            medication=cls.medication,
             quantity=100,
-            expiration_date=date.today() + timedelta(days=365),
+            expiration_date=date(2024, 12, 31),
             location="Warehouse A"
         )
 
@@ -124,39 +128,40 @@ class MedicationInventoryModelTest(TestCase):
 
 
 class MedicationPrescriptionModelTest(TestCase):
-    def setUp(self):
-        self.user_pdl = User.objects.create_user(username="janedoe", first_name="Jane", last_name="Doe")
-        self.pdl_profile = PDLProfile.objects.create(username=self.user_pdl, phone_number="5551234567")
+    @classmethod
+    def setUpTestData(cls):
+        cls.user_pdl = User.objects.create_user(username="janedoe", first_name="Jane", last_name="Doe")
+        cls.pdl_profile = PDLProfile.objects.create(username=cls.user_pdl, phone_number="5551234567")
 
-        self.user_physician = User.objects.create_user(username="drsmithdoctor", first_name="John", last_name="Smith Doctor")
-        self.physician = Physician.objects.create(
-            username=self.user_physician,
+        cls.user_physician = User.objects.create_user(username="drsmithdoctor", first_name="John", last_name="Smith Doctor")
+        cls.physician = Physician.objects.create(
+            username=cls.user_physician,
             employee_type="full_time",
             specialty=MedicalSpecialty.objects.create(name="Cardiology", description="Heart-related medical specialty."),
             phone_number="1234567890",
             address="123 Main St"
         )
 
-        self.medication_type = MedicationType.objects.create(name="Antibiotic")
-        self.generic_name = MedicationGenericName.objects.create(
+        cls.medication_type = MedicationType.objects.create(name="Antibiotic")
+        cls.generic_name = MedicationGenericName.objects.create(
             name="Amoxicillin",
-            medication_type=self.medication_type
+            medication_type=cls.medication_type
         )
-        self.medication = Medication.objects.create(
+        cls.medication = Medication.objects.create(
             name="Amoxil",
-            generic_name=self.generic_name,
+            generic_name=cls.generic_name,
             dosage_form="tablet",
             strength="500mg",
             route_of_administration="oral",
             manufacturer="PharmaCorp"
         )
-        self.prescription = MedicationPrescription.objects.create(
-            pdl_profile=self.pdl_profile,
-            medication=self.medication,
+        cls.prescription = MedicationPrescription.objects.create(
+            pdl_profile=cls.pdl_profile,
+            medication=cls.medication,
             dosage="500mg",
             frequency="3 times a day",
             duration="7 days",
-            prescribed_by=self.physician
+            prescribed_by=cls.physician
         )
 
     def test_prescription_creation(self):
@@ -182,12 +187,26 @@ class MedicationListViewTests(TestCase):
 
     def test_medication_list_view(self):
         """
-        Test the medication_list view to ensure it groups medications by type and applies filters.
+        Test the medication_list view to ensure it groups medications by their type, 
+        verifies the presence of specific medications in the response, and checks 
+        that medications are correctly grouped under their respective types.
         """
-        request = self.factory.get(reverse('medications:medication_list'))
-        response = medication_list(request)
+        client = self.client
+        response = client.get(reverse('medications:medication_list'))
 
         self.assertEqual(response.status_code, 200)
+
+        # Parse the response content
+        content = response.content.decode('utf-8')
+
+        # Check if the response contains grouped medication types
+        self.assertIn("Antibiotic", content)
+        self.assertIn("Amoxicillin 500mg", content)
+        self.assertIn("Amoxicillin 250mg", content)
+
+        # Ensure medications are grouped under their types
+        self.assertTrue(content.index("Amoxicillin 500mg") > content.index("Antibiotic"))
+        self.assertTrue(content.index("Amoxicillin 250mg") > content.index("Antibiotic"))
         
 
 
@@ -223,15 +242,42 @@ class MedicationFilterTest(TestCase):
         cls.med3 = Medication.objects.create(
             name="Tylenol",
             generic_name=cls.medication_generic_name3,
-            dosage_form="Syrup",
+            dosage_form="Tablet",
             route_of_administration="Oral"
         )
+    def test_filter_by_generic_name(self):
+        # Ensure all test medications have the same route of administration
+        self.assertEqual(self.med1.route_of_administration, "Oral")
+        self.assertEqual(self.med2.route_of_administration, "Oral")
+        self.assertEqual(self.med3.route_of_administration, "Oral")
+        filter_data = {'generic_name': 'ibuprofen'}
+        filtered = MedicationFilter(filter_data, queryset=Medication.objects.all())
+        self.assertEqual(filtered.qs.count(), 1)
+        self.assertEqual(filtered.qs.first(), self.med2)
 
-    def test_filter_by_name(self):
-        filter_data = {'name': 'aspirin'}
+    def test_filter_case_insensitivity(self):
+        filter_data = {'name': 'ASPIRIN'}
         filtered = MedicationFilter(filter_data, queryset=Medication.objects.all())
         self.assertEqual(filtered.qs.count(), 1)
         self.assertEqual(filtered.qs.first(), self.med1)
+
+    def test_filter_by_generic_name(self):
+        filter_data = {'generic_name': 'ibuprofen'}
+        filtered = MedicationFilter(filter_data, queryset=Medication.objects.all())
+        self.assertEqual(filtered.qs.count(), 1)
+        self.assertEqual(filtered.qs.first(), self.med2)
+
+    def test_filter_by_generic_name_partial_match(self):
+        filter_data = {'generic_name': 'ibu'}
+        filtered = MedicationFilter(filter_data, queryset=Medication.objects.all())
+        self.assertEqual(filtered.qs.count(), 1)
+        self.assertEqual(filtered.qs.first(), self.med2)
+
+    def test_filter_by_generic_name_case_insensitive(self):
+        filter_data = {'generic_name': 'IBUPROFEN'}
+        filtered = MedicationFilter(filter_data, queryset=Medication.objects.all())
+        self.assertEqual(filtered.qs.count(), 1)
+        self.assertEqual(filtered.qs.first(), self.med2)
 
     def test_filter_by_generic_name(self):
         filter_data = {'generic_name': 'ibuprofen'}
