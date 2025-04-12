@@ -1,9 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Consultation, Physician
-import calendar
-from datetime import date, timedelta
+from django.http import JsonResponse
 from django.contrib import messages
+from datetime import date, timedelta
+import datetime as dt
+import calendar
+
+from .models import (
+    Consultation,
+    Physician,
+    ConsultationLocation,
+    ConsultationReason,
+    ConsultationTimeBlock,
+)
 from .forms import ScheduleConsultationForm
+from pdl.models import PDLProfile
 
 
 def consultation_calendar(request, consultations):
@@ -141,11 +151,6 @@ def consultations_by_physician(request, physician_id):
 
     # Render the template
     return render(request, "consultations/consultation_calendar.html", context)
-
-
-from datetime import date
-from django.shortcuts import render, get_object_or_404
-from .models import Physician, Consultation
 
 def doctor_dashboard(request):
     """
@@ -288,12 +293,6 @@ def reschedule_consultation(request, consultation_id):
 
     return render(request, 'consultations/reschedule_consultation.html', {'form': form, 'consultation': consultation})
 
-
-
-from django.shortcuts import redirect
-from django.contrib import messages
-import datetime as dt
-
 def create_consultation(request):
     if request.method == 'POST':
         try:
@@ -338,10 +337,6 @@ def create_consultation(request):
 
     return render(request, 'consultations/create_consultation.html')
     
-from django.http import JsonResponse
-from pdl.models import PDLProfile
-from .models import Physician, ConsultationLocation, ConsultationReason, ConsultationTimeBlock
-
 def pdl_list_api(request):
     pdls = PDLProfile.objects.all()
     formatted_pdls = [

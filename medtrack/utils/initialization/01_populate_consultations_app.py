@@ -1,6 +1,14 @@
 # PART 1: MEDICAL SPECIALTIES
 
-from consultations.models import MedicalSpecialty
+from consultations.models import MedicalSpecialty, ConsultationTimeBlock
+from consultations.models import Physician
+from django.contrib.auth.models import User
+from pdl.models import PDLProfile
+from consultations.models import Consultation
+from datetime import datetime, timedelta
+
+import numpy as np
+from consultations.models import ConsultationReason
 
 # Suggested medical specialties
 medical_specialties = [
@@ -31,10 +39,6 @@ for specialty_data in medical_specialties:
 
 
 # PART 2: PHYSICIANS
-
-from consultations.models import Physician
-from django.contrib.auth.models import User
-
 # Suggested physicians
 physicians = [
     {
@@ -136,7 +140,6 @@ for physician_data in physicians:
         print(f"Physician profile already exists for: {physician.username}")
 
 # PART 3: CONSULTATION REASONS
-from consultations.models import ConsultationReason
 
 # Suggested consultation reasons
 consultation_reasons = [
@@ -194,97 +197,89 @@ for location_data in consultation_locations:
 
 
 # PART 5: CONSULTATIONS
-from pdl.models import PDLProfile
-from consultations.models import Consultation
-from datetime import datetime, timedelta
 
-import numpy as np
-
-# Suggested consultations
 consultations = [
     {
         "physician": Physician.objects.get(username=User.objects.get(username="johnbaker")),
-        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="johndoe")), # Make sure to create a PDLProfile for this user or run this after 00_populate_pdl_profiles.py
+        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="johndoe")),
         "location": ConsultationLocation.objects.get(room_number="RM101"),
         "reason": ConsultationReason.objects.get(reason="Routine Checkup"),
         "status": "scheduled",
         "consultation_date_date_only": (datetime.now() + timedelta(days=np.random.randint(1, 10))).date(),
-        "consultation_time_block": "BLOCK_01",
+        "consultation_time_block": ConsultationTimeBlock.BLOCK_08_00.name,  # Updated
         "notes": "Routine checkup for general health.",
     },
-     {
+    {
         "physician": Physician.objects.get(username=User.objects.get(username="alicecooper")),
-        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="chrisbrown")), # Make sure to create a PDLProfile for this user or run this after 00_populate_pdl_profiles.py
+        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="chrisbrown")),
         "location": ConsultationLocation.objects.get(room_number="RM102"),
         "reason": ConsultationReason.objects.get(reason="Routine Checkup"),
         "status": "scheduled",
         "consultation_date_date_only": (datetime.now() + timedelta(days=np.random.randint(1, 10))).date(),
-        "consultation_time_block": "BLOCK_06",
+        "consultation_time_block": ConsultationTimeBlock.BLOCK_09_30.name,  # Updated
         "notes": "Routine checkup for general health.",
     },
     {
         "physician": Physician.objects.get(username=User.objects.get(username="robertmiller")),
-        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="lauragarcia")), # Make sure to create a PDLProfile for this user or run this after 00_populate_pdl_profiles.py
+        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="lauragarcia")),
         "location": ConsultationLocation.objects.get(room_number="RM103"),
         "reason": ConsultationReason.objects.get(reason="Follow-up Visit"),
         "status": "scheduled",
         "consultation_date_date_only": (datetime.now() + timedelta(days=np.random.randint(1, 10))).date(),
-        "consultation_time_block": "BLOCK_11",
+        "consultation_time_block": ConsultationTimeBlock.BLOCK_11_00.name,  # Updated
         "notes": "Follow-up on previous condition.",
     },
     {
         "physician": Physician.objects.get(username=User.objects.get(username="jessicaadams")),
-        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="lauragarcia")), # Make sure to create a PDLProfile for this user or run this after 00_populate_pdl_profiles.py
+        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="lauragarcia")),
         "location": ConsultationLocation.objects.get(room_number="RM103"),
         "reason": ConsultationReason.objects.get(reason="Follow-up Visit"),
         "status": "scheduled",
         "consultation_date_date_only": (datetime.now() + timedelta(days=np.random.randint(1, 10))).date(),
-        "consultation_time_block": "BLOCK_12",
+        "consultation_time_block": ConsultationTimeBlock.BLOCK_13_30.name,  # Updated
         "notes": "Follow-up on previous condition.",
     },
     {
         "physician": Physician.objects.get(username=User.objects.get(username="robertmiller")),
-        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="emilydavis")), # Make sure to create a PDLProfile for this user or run this after 00_populate_pdl_profiles.py
+        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="emilydavis")),
         "location": ConsultationLocation.objects.get(room_number="RM103"),
         "reason": ConsultationReason.objects.get(reason="Follow-up Visit"),
         "status": "scheduled",
         "consultation_date_date_only": (datetime.now() + timedelta(days=np.random.randint(1, 10))).date(),
-        "consultation_time_block": "BLOCK_23",
+        "consultation_time_block": ConsultationTimeBlock.BLOCK_14_30.name,  # Updated
         "notes": "Follow-up on previous condition.",
     },
     {
         "physician": Physician.objects.get(username=User.objects.get(username="jessicaadams")),
-        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="johndoe")), # Make sure to create a PDLProfile for this user or run this after 00_populate_pdl_profiles.py
+        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="johndoe")),
         "location": ConsultationLocation.objects.get(room_number="RM104"),
         "reason": ConsultationReason.objects.get(reason="Emergency Consultation"),
         "status": "canceled",
         "consultation_date_date_only": (datetime.now() + timedelta(days=np.random.randint(1, 10))).date(),
-        "consultation_time_block": "BLOCK_17",
+        "consultation_time_block": ConsultationTimeBlock.BLOCK_15_00.name,  # Updated
         "notes": "Immediate medical attention required.",
     },
     {
         "physician": Physician.objects.get(username=User.objects.get(username="williamclark")),
-        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="johndoe")), # Make sure to create a PDLProfile for this user or run this after 00_populate_pdl_profiles.py
+        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="johndoe")),
         "location": ConsultationLocation.objects.get(room_number="RM105"),
         "reason": ConsultationReason.objects.get(reason="Specialist Referral"),
         "status": "scheduled",
         "consultation_date_date_only": (datetime.now() + timedelta(days=np.random.randint(1, 10))).date(),
-        "consultation_time_block": "BLOCK_13",
+        "consultation_time_block": ConsultationTimeBlock.BLOCK_13_00.name,  # Updated
         "notes": "Referral to a specialist.",
     },
     {
         "physician": Physician.objects.get(username=User.objects.get(username="sophiaturner")),
-        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="chrisbrown")), # Make sure to create a PDLProfile for this user or run this after 00_populate_pdl_profiles.py
+        "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="chrisbrown")),
         "location": ConsultationLocation.objects.get(room_number="RM201"),
         "reason": ConsultationReason.objects.get(reason="Medication Review"),
         "status": "scheduled",
         "consultation_date_date_only": (datetime.now() + timedelta(days=np.random.randint(1, 10))).date(),
-        "consultation_time_block": "BLOCK_03",
+        "consultation_time_block": ConsultationTimeBlock.BLOCK_08_30.name,  # Updated
         "notes": "Review of current medications.",
     }
-    ]
-
-
+]
 # Delete existing records
 Consultation.objects.all().delete()
 
