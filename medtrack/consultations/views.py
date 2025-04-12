@@ -33,9 +33,11 @@ def consultation_calendar(request, consultations):
    
     # Prepare data for the calendar
     today = date.today()
-    year = request.GET.get('year', today.year)
-    month = request.GET.get('month', today.month)
-    year, month = int(year), int(month)
+    year = int(request.GET.get('year', today.year))
+    month = int(request.GET.get('month', today.month))
+    if year < 1 or month < 1 or month > 12:
+        messages.error(request, "Invalid year or month provided. Defaulting to the current date.")
+        year, month = today.year, today.month
 
     # Create a calendar object
     cal = calendar.Calendar()
@@ -231,11 +233,11 @@ def cancel_consultation(request, consultation_id):
         consultation is successfully canceled.
     """
   
-    consultation = get_object_or_404(Consultation, id=consultation_id)
+    consultation = get_object_or_404(Consultation.objects.select_related('physician'), id=consultation_id)
 
     if request.method == 'POST':
         # Mark the consultation as canceled
-        consultation.status = 'canceled'
+        consultation.status = Consultation.Status.CANCELED  # Use the appropriate constant or enum for 'canceled'
         consultation.save()
 
         # Add a success message
@@ -255,7 +257,8 @@ def reschedule_consultation(request, consultation_id):
 
     Args:
         request (HttpRequest): The HTTP request object containing metadata about the request.
-        consultation_id (int): The ID of the consultation to be rescheduled.
+        consultation_id (int): The ID of the consultation to be rescheduled. 
+            Expected to be a positive integer.
 
     Returns:
         HttpResponse: Renders the reschedule consultation page with the form if the request
