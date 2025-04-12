@@ -12,7 +12,7 @@ PDL Profile - {{ pdl.pdl_profile }}
     </h1>
     <div class="row d-flex align-items-stretch">
         <div class="col-md-4 mb-3">
-            <div class="card px-5 py-5 shadow h-100">
+            <div class="card px-5 py-5 shadow-sm h-100">
                 <h4 class="pb-4">
                     <i class="bi bi-person-circle pe-1"></i>
                     Personal Information
@@ -56,19 +56,59 @@ PDL Profile - {{ pdl.pdl_profile }}
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="consultationModalLabel{{ forloop.counter }}">Consultation Details</h5>
+                                        <h5 class="modal-title" id="consultationModalLabel{{ forloop.counter }}">
+                                            Consultation Details
+                                        </h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
-                                    <div class="modal-body">
-                                        <p><strong>Date:</strong> {{ consultation.consultation_date_date_only }}</p>
-                                        <p><strong>Time:</strong> {{ consultation.consultation_time_block_display }}</p>
-                                        <p><strong>Physician:</strong> {{ consultation.physician }}</p>
-                                        <p><strong>Location:</strong> {{ consultation.location }}</p>
-                                        <p><strong>Reason:</strong> {{ consultation.reason }}</p>
-                                        <p><strong>Notes:</strong> {{ consultation.notes }}</p>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <div class="modal-body p-4">
+                                        <div class="d-flex align-items-start mb-3">
+                                            <i class="bi bi-calendar-event text-secondary me-3 fs-5"></i>
+                                            <div>
+                                                <p class="small text-muted mb-0">Date</p>
+                                                <p class="mb-0">{{ consultation.consultation_date_date_only }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-start mb-3">
+                                            <i class="bi bi-clock text-secondary me-3 fs-5"></i>
+                                            <div>
+                                                <p class="small text-muted mb-0">Time</p>
+                                                <p class="mb-0">{{ consultation.consultation_time_block_display }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-start mb-3">
+                                            <i class="bi bi-person-badge text-secondary me-3 fs-5"></i>
+                                            <div>
+                                                <p class="small text-muted mb-0">Physician</p>
+                                                <p class="mb-0">{{ consultation.physician }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-start mb-3">
+                                            <i class="bi bi-geo-alt text-secondary me-3 fs-5"></i>
+                                            <div>
+                                                <p class="small text-muted mb-0">Location</p>
+                                                <p class="mb-0">{{ consultation.location }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-start mb-3">
+                                            <i class="bi bi-chat-quote text-secondary me-3 fs-5"></i>
+                                            <div>
+                                                <p class="small text-muted mb-0">Reason</p>
+                                                <p class="mb-0">{{ consultation.reason }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-journal-text text-secondary me-3 fs-5"></i>
+                                            <div>
+                                                <p class="small text-muted mb-0">Notes</p>
+                                                <p class="mb-0">{{ consultation.notes }}</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
