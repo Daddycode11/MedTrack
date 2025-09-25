@@ -129,6 +129,141 @@ class Consultation(models.Model):
     is_an_emergency = models.BooleanField(default=False)
     notes = models.TextField(blank=True, null=True)
 
+    pmh_pediatric_history = models.TextField("Pediatric history", blank=True, null=True)
+    pmh_major_adult_illnesses = models.TextField("Major adult illnesses", blank=True, null=True)
+    pmh_major_surgeries = models.TextField("Major surgeries", blank=True, null=True)
+    pmh_serious_injuries = models.TextField("Serious physical injuries", blank=True, null=True)
+    pmh_limitations = models.TextField("Limitations on range of motion and activities", blank=True, null=True)
+    pmh_medication_history = models.TextField("Medication history", blank=True, null=True)
+    pmh_transfusions_reactions = models.TextField("History of transfusions/BT reactions", blank=True, null=True)
+    pmh_mental_emotional = models.TextField("Mental and emotional problems", blank=True, null=True)
+
+    BLOOD_TYPE_CHOICES = [
+        ('A+', 'A+'), ('A-', 'A-'),
+        ('B+', 'B+'), ('B-', 'B-'),
+        ('AB+', 'AB+'), ('AB-', 'AB-'),
+        ('O+', 'O+'), ('O-', 'O-'),
+    ]
+    pmh_blood_type = models.CharField("Blood type", max_length=3, choices=BLOOD_TYPE_CHOICES, blank=True, null=True)
+
+    pmh_allergies = models.TextField("Allergies", blank=True, null=True)
+
+    FAMILY_HISTORY_CHOICES = [
+        ('HTN', 'Hypertension'),
+        ('STROKE', 'Stroke'),
+        ('MI', 'Heart attack'),
+        ('DM', 'Diabetes'),
+        ('ASTHMA', 'Asthma'),
+        ('CKD', 'Kidney disease'),
+        ('CA', 'Cancer'),
+    ]
+    pmh_family_history = models.CharField(
+        "Family history",
+        max_length=50,
+        choices=FAMILY_HISTORY_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Select one family history condition"
+    )
+
+    pmh_psychiatric_history = models.BooleanField("Past psychiatric history", default=False)
+    pmh_psychiatric_when = models.CharField("If yes, when", max_length=255, blank=True, null=True)
+    pmh_psychiatric_facility = models.BooleanField("Confinement in a psychiatric facility", default=False)
+
+    pmh_arv_treatment = models.BooleanField("ARV treatment", default=False)
+    pmh_arv_details = models.TextField("ARV treatment details", blank=True, null=True)
+
+    pmh_vaccines = models.TextField("Vaccines", blank=True, null=True)
+
+    pmh_alcohol_drinker = models.BooleanField("Alcohol drinker", default=False)
+
+    SMOKING_CHOICES = [
+        ('NEVER', 'Never smoked'),
+        ('CURRENT', 'Current smoker'),
+        ('PASSIVE', 'Passive smoker'),
+        ('STOPPED', 'Stopped > 1 year'),
+    ]
+    pmh_smoking = models.CharField("Smoking history", max_length=10, choices=SMOKING_CHOICES, blank=True, null=True)
+
+    pmh_illicit_drugs = models.BooleanField("Use of illicit drugs", default=False)
+    pmh_poly_drug_use = models.BooleanField("Uses more than one drug at a time", default=False)
+
+    # --- Physical Examination on Arrival ---
+    pea_temperature = models.DecimalField("Temperature (°C)", max_digits=4, decimal_places=1, blank=True, null=True)
+    pea_blood_pressure = models.CharField("Blood pressure (mmHg)", max_length=20, blank=True, null=True)
+    pea_heart_rate = models.IntegerField("Heart rate (bpm)", blank=True, null=True)
+    pea_rr = models.IntegerField("Respiratory rate (breaths/min)", blank=True, null=True)
+    pea_height = models.DecimalField("Height (cm)", max_digits=5, decimal_places=2, blank=True, null=True)
+    pea_weight = models.DecimalField("Weight (kg)", max_digits=5, decimal_places=2, blank=True, null=True)
+    pea_bmi = models.DecimalField("Body Mass Index (BMI)", max_digits=4, decimal_places=1, blank=True, null=True)
+
+    pea_general_appearance = models.BooleanField("Complaining: General appearance", default=False)
+    pea_head_eyes_ears_nose_throat = models.BooleanField("Complaining: Head/Eyes/Ears/Nose/Throat", default=False)
+    pea_neck = models.BooleanField("Complaining: Neck", default=False)
+    pea_chest_lungs = models.BooleanField("Complaining: Chest/Lungs", default=False)
+    pea_heart = models.BooleanField("Complaining: Heart", default=False)
+    pea_abdomen = models.BooleanField("Complaining: Abdomen", default=False)
+    pea_genito_urinary = models.BooleanField("Complaining: Genito-urinary tract", default=False)
+    pea_musculoskeletal = models.BooleanField("Complaining: Musculoskeletal system", default=False)
+    pea_extremities = models.BooleanField("Complaining: Extremities", default=False)
+    pea_other_findings = models.TextField("Other significant findings", blank=True, null=True)
+
+        # --- TB Entry Screening Checklist ---
+    tb_unexplained_cough = models.BooleanField("Unexplained cough", default=False)
+    tb_bmi_less_18_5 = models.BooleanField("BMI < 18.5", default=False)
+    tb_blood_streaked_sputum = models.BooleanField("Blood-streaked sputum", default=False)
+    tb_cxr_suggestive = models.BooleanField("Chest X-ray suggestive of TB", default=False)
+    tb_previous_treatment = models.BooleanField("History of previous TB treatment", default=False)
+    tb_exposure = models.BooleanField("History of TB exposure", default=False)
+
+    TB_REMARKS_CHOICES = [
+        ('PRESUMPTIVE_TB', 'Presumptive TB'),
+        ('PRESUMPTIVE_DR_TB', 'Presumptive DR-TB'),
+        ('NOT_TB', 'Not TB'),
+        ('ONGOING_TB', 'Ongoing TB'),
+        ('OTHER_FU', 'Other follow-up'),
+    ]
+    tb_remarks = models.CharField(
+        "TB remarks",
+        max_length=20,
+        choices=TB_REMARKS_CHOICES,
+        blank=True,
+        null=True
+    )
+
+    # --- Final Remarks ---
+    FR_CONCLUSION_CHOICES = [
+        ('HEALTHY', 'Practically healthy'),
+        ('SBIRT', 'SBIRT'),
+        ('PHILPEN', 'PhilPEN'),
+        ('NEURO_PSYCH', 'Neuro-psychiatric evaluation'),
+        ('ILL_TREATMENT', 'Further documentation of allegations of ill-treatment'),
+    ]
+    fr_conclusion = models.CharField(
+        "Final conclusion",
+        max_length=30,
+        choices=FR_CONCLUSION_CHOICES,
+        blank=True,
+        null=True
+    )
+
+    fr_other_impressions = models.TextField(
+        "Other impressions", blank=True, null=True
+    )
+
+    FR_RECOMMENDATION_CHOICES = [
+        ('DORM', 'To be accommodated in general dormitory'),
+        ('ISOLATED', 'To be isolated'),
+        ('HOSPITAL', 'To be hospitalized'),
+    ]
+    fr_recommendation = models.CharField(
+        "Recommendation",
+        max_length=20,
+        choices=FR_RECOMMENDATION_CHOICES,
+        blank=True,
+        null=True
+    )
+
     def __str__(self):
         # Consultation with Physician on Month Year, Time Block
         # lookup block name in enum

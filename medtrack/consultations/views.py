@@ -395,3 +395,11 @@ def consultation_time_block_list_api(request):
                 'display': block.value[1]  # Send the formatted display time
             })
     return JsonResponse(time_blocks, safe=False)
+
+
+def consultation_printable(request, pk):
+    """
+    Renders a printable, IRS/US-gov style form for a single Consultation.
+    """
+    obj = get_object_or_404(Consultation, pk=pk)
+    return render(request, "consultations/consultation_printable.html", {"c": obj})

@@ -1,0 +1,378 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CONSULTATION FORM — PRINT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- IRS / US-gov look & print setup -->
+<style>
+  :root{
+    --ink:#000;
+    --grid:#000;
+    --muted:#333;
+    --pad:8px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#fff;color:var(--ink);}
+  body{font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:12px; line-height:1.25;}
+  .toolbar{padding:10px; border-bottom:1px solid #ddd; background:#fafafa;}
+  .no-print{display:block;}
+  .container{max-width:980px; margin:0 auto; padding:16px;}
+  h1,h2,h3{margin:0 0 6px 0;}
+  .title{font-weight:700; letter-spacing:1px; font-size:16px;}
+  .subtitle{color:var(--muted); font-size:12px; margin-bottom:12px;}
+  .form-box{border:2px solid var(--grid); margin-bottom:12px;}
+  .section-header{
+    background:#fff; padding:6px var(--pad); border-bottom:2px solid var(--grid);
+    font-weight:700; letter-spacing:0.5px; display:flex; align-items:center; gap:8px;
+  }
+  .section-body{padding:8px;}
+  .grid{display:grid; grid-template-columns: repeat(12, 1fr); gap:6px;}
+  .col-12{grid-column: span 12;}
+  .col-6{grid-column: span 6;}
+  .col-4{grid-column: span 4;}
+  .col-3{grid-column: span 3;}
+  .field{border:1px solid var(--grid); padding:6px;}
+  .label{font-weight:700; font-size:10px; letter-spacing:0.5px; margin-bottom:3px;}
+  .value{min-height:18px; white-space:pre-wrap;}
+  .rows-2 .value{min-height:36px;}
+  .checkbox-line{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+  .box{display:inline-block; width:12px; height:12px; border:1px solid var(--grid); text-align:center; line-height:12px; font-weight:700;}
+  .yes .box::after{content:"X"; font-size:10px; position:relative; top:-1px;}
+  .pair{display:flex; gap:8px; align-items:center;}
+  .muted{color:var(--muted);}
+  .hr{height:1px; background:var(--grid); opacity:0.6; margin:6px 0;}
+  .sig-line{border-top:1px solid var(--grid); height:28px; margin-top:18px;}
+  .sig-label{font-size:10px; color:var(--muted); margin-top:3px;}
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .three-col{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
+  .right{text-align:right;}
+
+  /* Page breaks for print */
+  .page-break{page-break-before:always; break-before:page;}
+  @media print{
+    .no-print{display:none !important;}
+    .container{max-width:none; padding:0.5in;}
+    .form-box{break-inside:avoid; page-break-inside:avoid;}
+    .page-break{page-break-before:always;}
+    a[href]:after{content:"";}
+  }
+</style>
+</head>
+<body>
+
+<!-- On-screen toolbar (hidden on print) -->
+<div class="toolbar no-print">
+  <div class="container" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+    <div>
+      <strong>CONSULTATION FORM — PRINT PREVIEW</strong>
+      <span class="muted">| {{ c.pk }} | Generated: {{ now|date:"Y-m-d H:i" }}</span>
+    </div>
+    <div>
+      <button onclick="window.print()" class="btn-print" style="padding:6px 10px; border:1px solid #000; background:#fff; cursor:pointer;">Print</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Header -->
+  <div class="form-box">
+    <div class="section-header">
+      <span>DEPARTMENT OF HEALTH SERVICES</span>
+      <span class="muted">— MEDICAL CONSULTATION RECORD</span>
+      <span class="right" style="margin-left:auto;">Form ID: HRS-CNS-01</span>
+    </div>
+    <div class="section-body">
+      <div class="grid">
+        <div class="field col-6">
+          <div class="label">PDL / PROFILE</div>
+          <div class="value">{{ c.pdl_profile }}</div>
+        </div>
+        <div class="field col-3">
+          <div class="label">DATE</div>
+          <div class="value">{{ c.consultation_date_date_only|date:"Y-m-d" }}</div>
+        </div>
+        <div class="field col-3">
+          <div class="label">TIME BLOCK</div>
+          <div class="value">{{ c.consultation_time_block }}</div>
+        </div>
+
+        <div class="field col-4">
+          <div class="label">PHYSICIAN</div>
+          <div class="value">{{ c.physician }}</div>
+        </div>
+        <div class="field col-4">
+          <div class="label">LOCATION</div>
+          <div class="value">{{ c.location }}</div>
+        </div>
+        <div class="field col-4">
+          <div class="label">REASON</div>
+          <div class="value">{{ c.reason }}</div>
+        </div>
+
+        <div class="field col-12">
+          <div class="label">NOTES</div>
+          <div class="value rows-2">{{ c.notes }}</div>
+        </div>
+
+        <div class="field col-3">
+          <div class="label">EMERGENCY CASE</div>
+          <div class="checkbox-line {% if c.is_an_emergency %}yes{% endif %}">
+            <span class="box"></span><span>YES</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Physical Exam on Arrival -->
+  <div class="form-box">
+    <div class="section-header">PHYSICAL EXAMINATION ON ARRIVAL (PEA)</div>
+    <div class="section-body">
+      <div class="grid">
+        <div class="field col-2"><div class="label">TEMP (°C)</div><div class="value">{{ c.pea_temperature }}</div></div>
+        <div class="field col-3"><div class="label">BLOOD PRESSURE (mmHg)</div><div class="value">{{ c.pea_blood_pressure }}</div></div>
+        <div class="field col-2"><div class="label">HEART RATE (bpm)</div><div class="value">{{ c.pea_heart_rate }}</div></div>
+        <div class="field col-2"><div class="label">RESP RATE</div><div class="value">{{ c.pea_rr }}</div></div>
+        <div class="field col-1"><div class="label">HT (cm)</div><div class="value">{{ c.pea_height }}</div></div>
+        <div class="field col-1"><div class="label">WT (kg)</div><div class="value">{{ c.pea_weight }}</div></div>
+        <div class="field col-1"><div class="label">BMI</div><div class="value">{{ c.pea_bmi }}</div></div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="three-col">
+        <div class="field">
+          <div class="label">GENERAL APPEARANCE</div>
+          <div class="checkbox-line {% if c.pea_general_appearance %}yes{% endif %}">
+            <span class="box"></span><span>COMPLAINING</span>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">HEENT</div>
+          <div class="checkbox-line {% if c.pea_head_eyes_ears_nose_throat %}yes{% endif %}">
+            <span class="box"></span><span>COMPLAINING</span>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">NECK</div>
+          <div class="checkbox-line {% if c.pea_neck %}yes{% endif %}">
+            <span class="box"></span><span>COMPLAINING</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="three-col" style="margin-top:6px;">
+        <div class="field">
+          <div class="label">CHEST / LUNGS</div>
+          <div class="checkbox-line {% if c.pea_chest_lungs %}yes{% endif %}">
+            <span class="box"></span><span>COMPLAINING</span>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">HEART</div>
+          <div class="checkbox-line {% if c.pea_heart %}yes{% endif %}">
+            <span class="box"></span><span>COMPLAINING</span>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">ABDOMEN</div>
+          <div class="checkbox-line {% if c.pea_abdomen %}yes{% endif %}">
+            <span class="box"></span><span>COMPLAINING</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="three-col" style="margin-top:6px;">
+        <div class="field">
+          <div class="label">GENITO-URINARY TRACT</div>
+          <div class="checkbox-line {% if c.pea_genito_urinary %}yes{% endif %}">
+            <span class="box"></span><span>COMPLAINING</span>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">MUSCULOSKELETAL</div>
+          <div class="checkbox-line {% if c.pea_musculoskeletal %}yes{% endif %}">
+            <span class="box"></span><span>COMPLAINING</span>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">EXTREMITIES</div>
+          <div class="checkbox-line {% if c.pea_extremities %}yes{% endif %}">
+            <span class="box"></span><span>COMPLAINING</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:6px;">
+        <div class="label">OTHER SIGNIFICANT FINDINGS</div>
+        <div class="value rows-2">{{ c.pea_other_findings }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Past Medical History -->
+  <div class="form-box">
+    <div class="section-header">PAST MEDICAL HISTORY (PMH)</div>
+    <div class="section-body">
+      <div class="grid">
+        <div class="field col-3"><div class="label">BLOOD TYPE</div><div class="value">{{ c.pmh_blood_type }}</div></div>
+        <div class="field col-3"><div class="label">FAMILY HISTORY</div><div class="value">
+          {% if c.pmh_family_history == "HTN" %}Hypertension{% elif c.pmh_family_history == "STROKE" %}Stroke{% elif c.pmh_family_history == "MI" %}Heart attack{% elif c.pmh_family_history == "DM" %}Diabetes{% elif c.pmh_family_history == "ASTHMA" %}Asthma{% elif c.pmh_family_history == "CKD" %}Kidney disease{% elif c.pmh_family_history == "CA" %}Cancer{% endif %}
+        </div></div>
+        <div class="field col-3">
+          <div class="label">PSYCH HISTORY</div>
+          <div class="checkbox-line {% if c.pmh_psychiatric_history %}yes{% endif %}">
+            <span class="box"></span><span>YES</span>
+          </div>
+        </div>
+        <div class="field col-3">
+          <div class="label">PSYCH FACILITY CONFINEMENT</div>
+          <div class="checkbox-line {% if c.pmh_psychiatric_facility %}yes{% endif %}">
+            <span class="box"></span><span>YES</span>
+          </div>
+        </div>
+
+        <div class="field col-6"><div class="label">IF PSYCH HX, WHEN</div><div class="value">{{ c.pmh_psychiatric_when }}</div></div>
+        <div class="field col-6"><div class="label">SMOKING</div><div class="value">
+          {% if c.pmh_smoking == "NEVER" %}Never smoked{% elif c.pmh_smoking == "CURRENT" %}Current smoker{% elif c.pmh_smoking == "PASSIVE" %}Passive smoker{% elif c.pmh_smoking == "STOPPED" %}Stopped &gt; 1 year{% endif %}
+        </div></div>
+
+        <div class="field col-3">
+          <div class="label">ALCOHOL DRINKER</div>
+          <div class="checkbox-line {% if c.pmh_alcohol_drinker %}yes{% endif %}">
+            <span class="box"></span><span>YES</span>
+          </div>
+        </div>
+        <div class="field col-3">
+          <div class="label">ILLICIT DRUGS</div>
+          <div class="checkbox-line {% if c.pmh_illicit_drugs %}yes{% endif %}">
+            <span class="box"></span><span>YES</span>
+          </div>
+        </div>
+        <div class="field col-3">
+          <div class="label">POLY-DRUG USE</div>
+          <div class="checkbox-line {% if c.pmh_poly_drug_use %}yes{% endif %}">
+            <span class="box"></span><span>YES</span>
+          </div>
+        </div>
+
+        <div class="field col-12"><div class="label">PEDIATRIC HISTORY</div><div class="value rows-2">{{ c.pmh_pediatric_history }}</div></div>
+        <div class="field col-12"><div class="label">MAJOR ADULT ILLNESSES</div><div class="value rows-2">{{ c.pmh_major_adult_illnesses }}</div></div>
+        <div class="field col-12"><div class="label">MAJOR SURGERIES</div><div class="value rows-2">{{ c.pmh_major_surgeries }}</div></div>
+        <div class="field col-12"><div class="label">SERIOUS PHYSICAL INJURIES</div><div class="value rows-2">{{ c.pmh_serious_injuries }}</div></div>
+        <div class="field col-12"><div class="label">LIMITATIONS (ROM / ACTIVITIES)</div><div class="value rows-2">{{ c.pmh_limitations }}</div></div>
+        <div class="field col-12"><div class="label">MEDICATION HISTORY</div><div class="value rows-2">{{ c.pmh_medication_history }}</div></div>
+        <div class="field col-12"><div class="label">TRANSFUSIONS / BT REACTIONS</div><div class="value rows-2">{{ c.pmh_transfusions_reactions }}</div></div>
+        <div class="field col-12"><div class="label">MENTAL / EMOTIONAL PROBLEMS</div><div class="value rows-2">{{ c.pmh_mental_emotional }}</div></div>
+        <div class="field col-12"><div class="label">ALLERGIES</div><div class="value rows-2">{{ c.pmh_allergies }}</div></div>
+        <div class="field col-12"><div class="label">ARV TREATMENT DETAILS</div><div class="value rows-2">{{ c.pmh_arv_details }}</div></div>
+        <div class="field col-12"><div class="label">VACCINES</div><div class="value rows-2">{{ c.pmh_vaccines }}</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TB Entry Screening -->
+  <div class="form-box">
+    <div class="section-header">TB ENTRY SCREENING CHECKLIST</div>
+    <div class="section-body">
+      <div class="two-col">
+        <div class="field">
+          <div class="label">UNEXPLAINED COUGH</div>
+          <div class="checkbox-line {% if c.tb_unexplained_cough %}yes{% endif %}"><span class="box"></span><span>YES</span></div>
+        </div>
+        <div class="field">
+          <div class="label">BMI &lt; 18.5</div>
+          <div class="checkbox-line {% if c.tb_bmi_less_18_5 %}yes{% endif %}"><span class="box"></span><span>YES</span></div>
+        </div>
+        <div class="field">
+          <div class="label">BLOOD-STREAKED SPUTUM</div>
+          <div class="checkbox-line {% if c.tb_blood_streaked_sputum %}yes{% endif %}"><span class="box"></span><span>YES</span></div>
+        </div>
+        <div class="field">
+          <div class="label">CXR SUGGESTIVE OF TB</div>
+          <div class="checkbox-line {% if c.tb_cxr_suggestive %}yes{% endif %}"><span class="box"></span><span>YES</span></div>
+        </div>
+        <div class="field">
+          <div class="label">PREVIOUS TB TREATMENT</div>
+          <div class="checkbox-line {% if c.tb_previous_treatment %}yes{% endif %}"><span class="box"></span><span>YES</span></div>
+        </div>
+        <div class="field">
+          <div class="label">TB EXPOSURE</div>
+          <div class="checkbox-line {% if c.tb_exposure %}yes{% endif %}"><span class="box"></span><span>YES</span></div>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:6px;">
+        <div class="field col-6">
+          <div class="label">TB REMARKS</div>
+          <div class="value">
+            {% if c.tb_remarks == "PRESUMPTIVE_TB" %}Presumptive TB
+            {% elif c.tb_remarks == "PRESUMPTIVE_DR_TB" %}Presumptive DR-TB
+            {% elif c.tb_remarks == "NOT_TB" %}Not TB
+            {% elif c.tb_remarks == "ONGOING_TB" %}Ongoing TB
+            {% elif c.tb_remarks == "OTHER_FU" %}Other follow-up
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Final Remarks -->
+  <div class="form-box">
+    <div class="section-header">FINAL REMARKS</div>
+    <div class="section-body">
+      <div class="grid">
+        <div class="field col-6">
+          <div class="label">FINAL CONCLUSION</div>
+          <div class="value">
+            {% if c.fr_conclusion == "HEALTHY" %}Practically healthy
+            {% elif c.fr_conclusion == "SBIRT" %}SBIRT
+            {% elif c.fr_conclusion == "PHILPEN" %}PhilPEN
+            {% elif c.fr_conclusion == "NEURO_PSYCH" %}Neuro-psychiatric evaluation
+            {% elif c.fr_conclusion == "ILL_TREATMENT" %}Further documentation of allegations of ill-treatment
+            {% endif %}
+          </div>
+        </div>
+        <div class="field col-6">
+          <div class="label">RECOMMENDATION</div>
+          <div class="value">
+            {% if c.fr_recommendation == "DORM" %}To be accommodated in general dormitory
+            {% elif c.fr_recommendation == "ISOLATED" %}To be isolated
+            {% elif c.fr_recommendation == "HOSPITAL" %}To be hospitalized
+            {% endif %}
+          </div>
+        </div>
+        <div class="field col-12">
+          <div class="label">OTHER IMPRESSIONS</div>
+          <div class="value rows-2">{{ c.fr_other_impressions }}</div>
+        </div>
+      </div>
+
+      <!-- Signatures -->
+      <div class="grid" style="margin-top:12px;">
+        <div class="col-6">
+          <div class="sig-line"></div>
+          <div class="sig-label">PHYSICIAN SIGNATURE / LICENSE NO. / DATE</div>
+        </div>
+        <div class="col-6">
+          <div class="sig-line"></div>
+          <div class="sig-label">RECEIVED BY / DATE</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page footer -->
+  <div class="muted" style="text-align:right; font-size:10px;">
+    Document generated for record: {{ c.pk }} • {{ now|date:"Y-m-d H:i" }}
+  </div>
+
+  <div class="page-break"></div>
+</div>
+
+</body>
+</html>

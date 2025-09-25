@@ -31,6 +31,7 @@ urlpatterns = [
     path('schedule/', views.schedule_consultation, name='schedule_consultation'),
     path('cancel/<int:consultation_id>/', views.cancel_consultation, name='cancel_consultation'),
     path('reschedule/<int:consultation_id>/', views.reschedule_consultation, name='reschedule_consultation'),
+    path("<int:pk>/print/", views.consultation_printable, name="consultation_printable"),
     path('create/', views.create_consultation, name='create_consultation'),
     path('api/pdls/', views.pdl_list_api, name='pdl_list_api'),
     path('api/physicians/', views.physician_list_api, name='physician_list_api'),
