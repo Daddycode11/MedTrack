@@ -256,28 +256,62 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   })();
 
-  // ---------- E) (Your existing username/email autofill kept as-is)
+  // ---------- E) USERNAME/EMAIL AUTOFILL w/ whitespace removal + 5-digit suffix
   const firstNameInput = document.getElementById("id_first_name");
-  const lastNameInput = document.getElementById("id_last_name");
-  const usernameInput = document.getElementById("id_username");
-  const emailInput = document.getElementById("id_email");
+  const lastNameInput  = document.getElementById("id_last_name");
+  const usernameInput  = document.getElementById("id_username");
+  const emailInput     = document.getElementById("id_email");
 
-  function updateCredentials() {
-      const first = (firstNameInput?.value || '').trim().toLowerCase() || 'nofirstname';
-      const last  = (lastNameInput?.value  || '').trim().toLowerCase() || 'nolastname';
-      const base = `${first}.${last}`;
-      if (usernameInput) usernameInput.value = base;
-      if (emailInput) emailInput.value = `${base}@bjmptest.com`;
+  // Ensure read-only as requested
+  if (usernameInput) usernameInput.readOnly = true;
+  if (emailInput)    emailInput.readOnly = true;
+
+  // Sanitize helper: strip diacritics, lowercase, remove all non-alphanumerics (including whitespace)
+  function sanitizeName(s) {
+    return (s || "")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove diacritics
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, ""); // keep only a-z,0-9 (removes whitespace, punctuation, etc.)
   }
 
-  if (usernameInput) usernameInput.readOnly = true;
-  if (emailInput) emailInput.readOnly = true;
+  // Keep a stable random 5-digit suffix while first/last stay the same
+  let lastBase = "";
+  let currentSuffix = "";
+
+  function ensureSuffix() {
+    if (!currentSuffix || !/^\d{5}$/.test(currentSuffix)) {
+      currentSuffix = String(Math.floor(10000 + Math.random() * 90000)); // 10000..99999
+    }
+  }
+
+  function updateCredentials() {
+    const first = sanitizeName(firstNameInput?.value) || "nofirstname";
+    const last  = sanitizeName(lastNameInput?.value)  || "nolastname";
+
+    const base = `${first}.${last}`;
+
+    // If the (first.last) base changed, generate a fresh 5-digit suffix
+    if (base !== lastBase) {
+      lastBase = base;
+      currentSuffix = "";      // reset, then ensure
+      ensureSuffix();
+    } else {
+      ensureSuffix();
+    }
+
+    const finalUser = `${base}${currentSuffix}`;
+    const finalEmail = `${finalUser}@bjmptest.com`;
+
+    if (usernameInput) usernameInput.value = finalUser;
+    if (emailInput)    emailInput.value    = finalEmail;
+  }
 
   firstNameInput?.addEventListener("input", updateCredentials);
   lastNameInput?.addEventListener("input", updateCredentials);
   updateCredentials();
 });
 </script>
+
 
 
 {% endblock %}

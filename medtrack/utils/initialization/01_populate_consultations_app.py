@@ -22,6 +22,7 @@ medical_specialties = [
     {"name": "Gastroenterology", "description": "Study and treatment of digestive system disorders."},
     {"name": "Endocrinology", "description": "Study and treatment of hormonal disorders."},
     {"name": "Ophthalmology", "description": "Study and treatment of eye disorders."},
+    {"name": 'JO1 Registered Nurse', "description": "JO1 Registered Nurse"}
 ]
 
 # Delete existing records
@@ -42,67 +43,16 @@ for specialty_data in medical_specialties:
 # Suggested physicians
 physicians = [
     {
-        "username": "johnbaker",
-        "first_name": "John",
-        "last_name": "Baker",
-        "employee_type": "full_time",
-        "specialty": MedicalSpecialty.objects.get(name="Cardiology"),
-        "phone_number": "555-1234",
-        "email": "johnbaker@email.com",
-        "address": "123 Main St, Springfield"
-    },
-    {
-        "username": "alicecooper",
-        "first_name": "Alice",
-        "last_name": "Cooper",
-        "employee_type": "part_time",
-        "specialty": MedicalSpecialty.objects.get(name="Dermatology"),
-        "phone_number": "555-5678",
-        "email": "alicecooper@email.com",
-        "address": "456 Elm St, Springfield"
-    },
-    {
-        "username": "robertmiller",
-        "first_name": "Robert",
-        "last_name": "Miller",
-        "employee_type": "full_time",
-        "specialty": MedicalSpecialty.objects.get(name="Neurology"),
-        "phone_number": "555-8765",
-        "email": "robertmiller@email.com",
-        "address": "789 Oak St, Springfield"
-    },
-    {
-        "username": "jessicaadams",
-        "first_name": "Jessica",
-        "last_name": "Adams",
+        "username": "floigarcia",
+        "first_name": "Floi Belen",
+        "last_name": "Laquiores Garcia",
         "employee_type": "contract",
-        "specialty": MedicalSpecialty.objects.get(name="Pediatrics"),
+        "specialty": MedicalSpecialty.objects.get(name="JO1 Registered Nurse"),
         "phone_number": "555-4321",
         "email": "jessicaadams@email.com",
         "address": "321 Pine St, Springfield"
     },
-    {
-        "username": "williamclark",
-        "first_name": "William",
-        "last_name": "Clark",
-        "employee_type": "full_time",
-        "specialty": MedicalSpecialty.objects.get(name="Psychiatry"),
-        "phone_number": "555-6789",
-        "email": "williamclark@email.com",
-        "address": "654 Maple St, Springfield"
-    },
-    {
-        "username": "sophiaturner",
-        "first_name": "Sophia",
-        "last_name": "Turner",
-        "employee_type": "part_time",
-        "specialty": MedicalSpecialty.objects.get(name="Orthopedics"),
-        "phone_number": "555-9876",
-        "email": "sophiaturner@email.com",
-        "address": "987 Birch St, Springfield"
-    }
 ]
-
 # Delete existing records
 Physician.objects.all().delete()
 
@@ -200,7 +150,7 @@ for location_data in consultation_locations:
 
 consultations = [
     {
-        "physician": Physician.objects.get(username=User.objects.get(username="johnbaker")),
+        "physician": Physician.objects.get(username=User.objects.get(username="floigarcia")),
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="johndoe")),
         "location": ConsultationLocation.objects.get(room_number="RM101"),
         "reason": ConsultationReason.objects.get(reason="Routine Checkup"),
@@ -210,7 +160,7 @@ consultations = [
         "notes": "Routine checkup for general health.",
     },
     {
-        "physician": Physician.objects.get(username=User.objects.get(username="alicecooper")),
+        "physician": Physician.objects.get(username=User.objects.get(username="floigarcia")),
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="chrisbrown")),
         "location": ConsultationLocation.objects.get(room_number="RM102"),
         "reason": ConsultationReason.objects.get(reason="Routine Checkup"),
@@ -220,7 +170,7 @@ consultations = [
         "notes": "Routine checkup for general health.",
     },
     {
-        "physician": Physician.objects.get(username=User.objects.get(username="robertmiller")),
+        "physician": Physician.objects.get(username=User.objects.get(username="floigarcia")),
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="lauragarcia")),
         "location": ConsultationLocation.objects.get(room_number="RM103"),
         "reason": ConsultationReason.objects.get(reason="Follow-up Visit"),
@@ -230,7 +180,7 @@ consultations = [
         "notes": "Follow-up on previous condition.",
     },
     {
-        "physician": Physician.objects.get(username=User.objects.get(username="jessicaadams")),
+        "physician": Physician.objects.get(username=User.objects.get(username="floigarcia")),
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="lauragarcia")),
         "location": ConsultationLocation.objects.get(room_number="RM103"),
         "reason": ConsultationReason.objects.get(reason="Follow-up Visit"),
@@ -240,7 +190,7 @@ consultations = [
         "notes": "Follow-up on previous condition.",
     },
     {
-        "physician": Physician.objects.get(username=User.objects.get(username="robertmiller")),
+        "physician": Physician.objects.get(username=User.objects.get(username="floigarcia")),
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="emilydavis")),
         "location": ConsultationLocation.objects.get(room_number="RM103"),
         "reason": ConsultationReason.objects.get(reason="Follow-up Visit"),
@@ -250,7 +200,7 @@ consultations = [
         "notes": "Follow-up on previous condition.",
     },
     {
-        "physician": Physician.objects.get(username=User.objects.get(username="jessicaadams")),
+        "physician": Physician.objects.get(username=User.objects.get(username="floigarcia")),
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="johndoe")),
         "location": ConsultationLocation.objects.get(room_number="RM104"),
         "reason": ConsultationReason.objects.get(reason="Emergency Consultation"),
@@ -260,7 +210,7 @@ consultations = [
         "notes": "Immediate medical attention required.",
     },
     {
-        "physician": Physician.objects.get(username=User.objects.get(username="williamclark")),
+        "physician": Physician.objects.get(username=User.objects.get(username="floigarcia")),
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="johndoe")),
         "location": ConsultationLocation.objects.get(room_number="RM105"),
         "reason": ConsultationReason.objects.get(reason="Specialist Referral"),
@@ -270,7 +220,7 @@ consultations = [
         "notes": "Referral to a specialist.",
     },
     {
-        "physician": Physician.objects.get(username=User.objects.get(username="sophiaturner")),
+        "physician": Physician.objects.get(username=User.objects.get(username="floigarcia")),
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="chrisbrown")),
         "location": ConsultationLocation.objects.get(room_number="RM201"),
         "reason": ConsultationReason.objects.get(reason="Medication Review"),

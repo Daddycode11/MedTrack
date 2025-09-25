@@ -49,17 +49,22 @@ Schedule Consultation
                     <div class="tab-pane fade show active" id="details-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                {{ form.pdl_profile.label_tag }}
-                                {{ form.pdl_profile|add_class:"form-select" }}
+                            {{ form.pdl_profile.label_tag }}
+                            {{ form.pdl_profile|add_class:"form-select" }}
+                           
                             </div>
+
                             <div class="col-md-6">
                                 {{ form.physician.label_tag }}
                                 {{ form.physician|add_class:"form-select" }}
                             </div>
+
                             <div class="col-md-6">
-                                {{ form.location.label_tag }}
-                                {{ form.location|add_class:"form-select" }}
+                            Detention room: <span id="pdl-room-display" class="badge bg-secondary">—</span>
+
                             </div>
+
+
                             <div class="col-md-6">
                                 {{ form.reason.label_tag }}
                                 {{ form.reason|add_class:"form-select" }}
@@ -361,4 +366,64 @@ Schedule Consultation
     }
   })();
 </script>
+<script>
+document.addEventListener('change', function(e){
+  if (e.target && e.target.matches('#pdlSelect')) {
+    e.target.dispatchEvent(new Event('change', { bubbles: true })); // re-fire to hit the bound listener
+  }
+});
+</script>
+
+<script>
+(function () {
+  function wireUp() {
+    const sel = document.getElementById('pdlSelect');
+    const roomBadge = document.getElementById('pdl-room-display');   // the badge in your template
+    const roomInput = document.getElementById('id_detention_room_number'); // optional readonly input
+
+    if (!sel) { console.log('pdlSelect not found'); return; }
+    console.log('pdlSelect found');
+
+    // 1) Listen for changes
+    sel.addEventListener('change', function (e) {
+      const val = e.target.value;
+      console.log('pdl change ->', val);
+
+      if (!val) {
+        if (roomBadge) roomBadge.textContent = '—';
+        if (roomInput) roomInput.value = '';
+        return;
+      }
+
+      fetch(`/pdl/api/pdl/${encodeURIComponent(val)}/latest-room/`, { credentials: 'same-origin' })
+        .then(r => r.ok ? r.json() : Promise.reject(r))
+        .then(data => {
+          const rn = (data && data.detention_room_number) ? data.detention_room_number : '';
+          if (roomBadge) roomBadge.textContent = rn || '—';
+          if (roomInput) {
+            roomInput.value = rn || '';
+            roomInput.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        })
+        .catch(err => console.error('room fetch failed:', err));
+    });
+
+    // 2) Prime on load if an option is already selected
+    if (sel.value) {
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wireUp);
+  } else {
+    wireUp();
+  }
+  // If you use Turbo/HTMX, keep these hooks:
+  document.addEventListener('turbo:load', wireUp);
+  document.addEventListener('htmx:afterSettle', wireUp);
+})();
+</script>
+
+
 {% endblock %}

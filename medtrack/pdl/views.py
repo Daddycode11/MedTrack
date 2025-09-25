@@ -110,3 +110,33 @@ def add_pdl(request):
         'detention_instance_form': detention_instance_form,
     })
     
+
+from django.http import JsonResponse, Http404
+from django.contrib.auth.decorators import login_required
+from .models import PDLProfile, DetentionInstance
+@login_required
+def pdl_detention_room_api(request, pk: int):
+    """
+    Return the latest detention_room_number for the given PDLProfile,
+    and try to map it to a Location id (if you have a Location model).
+    """
+    try:
+        pdl = PDLProfile.objects.get(pk=pk)
+    except PDLProfile.DoesNotExist:
+        raise Http404("PDL not found")
+
+    latest = (
+        DetentionInstance.objects
+        .filter(pdl_profile=pdl)
+        .exclude(detention_room_number__isnull=True)
+        .exclude(detention_room_number__exact="")
+        .order_by('-detention_start_date', '-created_at')
+        .first()
+    )
+
+    room_number = latest.detention_room_number if latest else None
+
+
+    return JsonResponse({
+        "room_number": room_number,
+    })

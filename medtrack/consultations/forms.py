@@ -8,7 +8,7 @@ class ScheduleConsultationForm(forms.ModelForm):
         model = Consultation
         fields = [
             # Details
-            'pdl_profile','physician','location','reason',
+            'pdl_profile','physician','reason',
             'consultation_date_date_only','consultation_time_block',
             'is_an_emergency','notes',
             # PMH
@@ -33,7 +33,6 @@ class ScheduleConsultationForm(forms.ModelForm):
         widgets = {
             'pdl_profile': forms.Select(attrs={'class':'form-select', 'id':'pdlSelect'}),
             'physician': forms.Select(attrs={'class':'form-select', 'id':'physicianSelect'}),
-            'location': forms.Select(attrs={'class':'form-select', 'id':'locationSelect'}),
             'reason': forms.Select(attrs={'class':'form-select', 'id':'reasonSelect'}),
             'consultation_date_date_only': forms.DateInput(attrs={'class':'form-control','type':'date','id':'consultationDate'}),
             'consultation_time_block': forms.Select(attrs={'class':'form-select','id':'timeSelect'}),

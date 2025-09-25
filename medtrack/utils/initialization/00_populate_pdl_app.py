@@ -123,7 +123,8 @@ detention_instances = [
         "detention_status": DetentionStatus.objects.get(status="In Custody"),
         "detention_start_date": datetime.now() - timedelta(days=10),
         "detention_end_date": None,
-        "detention_reason": DetentionReason.objects.get(reason="Theft")
+        "detention_reason": DetentionReason.objects.get(reason="Theft"),
+        'detention_room_number': "123",
     },
     {
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="janesmith")),
@@ -131,7 +132,8 @@ detention_instances = [
         "detention_status": DetentionStatus.objects.get(status="Released"),
         "detention_start_date": datetime.now() - timedelta(days=70),
         "detention_end_date": datetime.now() - timedelta(days=10),
-        "detention_reason": DetentionReason.objects.get(reason="Assault")
+        "detention_reason": DetentionReason.objects.get(reason="Assault"),
+        'detention_room_number': "456"
     },
     {
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="michaeljohnson")),
@@ -139,7 +141,8 @@ detention_instances = [
         "detention_status": DetentionStatus.objects.get(status="Transferred"),
         "detention_start_date": datetime.now() - timedelta(days=50),
         "detention_end_date": None,
-        "detention_reason": DetentionReason.objects.get(reason="Drug Possession")
+        "detention_reason": DetentionReason.objects.get(reason="Drug Possession"),
+        'detention_room_number': "123"
     },
     {
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="emilydavis")),
@@ -147,7 +150,8 @@ detention_instances = [
         "detention_status": DetentionStatus.objects.get(status="On Bail"),
         "detention_start_date": datetime.now() - timedelta(days=20),
         "detention_end_date": None,
-        "detention_reason": DetentionReason.objects.get(reason="Fraud")
+        "detention_reason": DetentionReason.objects.get(reason="Fraud"),
+        'detention_room_number': "144"
     },
     {
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="chrisbrown")),
@@ -155,7 +159,8 @@ detention_instances = [
         "detention_status": DetentionStatus.objects.get(status="Escaped"),
         "detention_start_date": datetime.now() - timedelta(days=150),
         "detention_end_date": None,
-        "detention_reason": DetentionReason.objects.get(reason="Vandalism")
+        "detention_reason": DetentionReason.objects.get(reason="Vandalism"),
+        'detention_room_number': "123"
     },
     {
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="sarahwilson")),
@@ -163,7 +168,8 @@ detention_instances = [
         "detention_status": DetentionStatus.objects.get(status="Under Investigation"),
         "detention_start_date": datetime.now() - timedelta(days=5),
         "detention_end_date": None,
-        "detention_reason": DetentionReason.objects.get(reason="Trespassing")
+        "detention_reason": DetentionReason.objects.get(reason="Trespassing"),
+        'detention_room_number': "123"
     },
     {
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="davidmartinez")),
@@ -171,7 +177,8 @@ detention_instances = [
         "detention_status": DetentionStatus.objects.get(status="In Custody"),
         "detention_start_date": datetime.now() - timedelta(days=30),
         "detention_end_date": None,
-        "detention_reason": DetentionReason.objects.get(reason="Domestic Violence")
+        "detention_reason": DetentionReason.objects.get(reason="Domestic Violence"),
+        'detention_room_number': "3278"
     },
     {
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="lauragarcia")),
@@ -179,7 +186,8 @@ detention_instances = [
         "detention_status": DetentionStatus.objects.get(status="Released"),
         "detention_start_date": datetime.now() - timedelta(days=15),
         "detention_end_date": datetime.now() - timedelta(days=5),
-        "detention_reason": DetentionReason.objects.get(reason="Public Intoxication")
+        "detention_reason": DetentionReason.objects.get(reason="Public Intoxication"),
+        'detention_room_number': "1289"
     },
     {
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="jamesanderson")),
@@ -187,7 +195,8 @@ detention_instances = [
         "detention_status": DetentionStatus.objects.get(status="Transferred"),
         "detention_start_date": datetime.now() - timedelta(days=40),
         "detention_end_date": None,
-        "detention_reason": DetentionReason.objects.get(reason="Disorderly Conduct")
+        "detention_reason": DetentionReason.objects.get(reason="Disorderly Conduct"),
+        'detention_room_number': "12"
     },
     {
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="oliviataylor")),
@@ -195,7 +204,8 @@ detention_instances = [
         "detention_status": DetentionStatus.objects.get(status="On Bail"),
         "detention_start_date": datetime.now() - timedelta(days=60),
         "detention_end_date": None,
-        "detention_reason": DetentionReason.objects.get(reason="Burglary")
+        "detention_reason": DetentionReason.objects.get(reason="Burglary"),
+        'detention_room_number': "129"
     },
 ]
 
@@ -210,7 +220,9 @@ for instance_data in detention_instances:
         detention_status=instance_data["detention_status"],
         detention_start_date=instance_data["detention_start_date"],
         detention_end_date=instance_data["detention_end_date"],
-        detention_reason=instance_data["detention_reason"]
+        detention_reason=instance_data["detention_reason"],
+        detention_room_number=instance_data["detention_room_number"]
+
     )
     if created:
         print(f"Added detention instance for: {instance.pdl_profile.username}")

@@ -15,6 +15,12 @@ from datetime import datetime, timedelta
 pharmacists = [
     {"username": "pharmacist1", "employee_type": "full_time", "phone_number": "1234567890", "address": "123 Main St", "first_name": "John", "last_name": "Doe II"},
     {"username": "pharmacist2", "employee_type": "part_time", "phone_number": "9876543210", "address": "456 Elm St", "first_name": "Jane", "last_name": "Smith II"},
+     {
+        "username": "floigarcia",
+        "first_name": "Floi Belen",
+        "last_name": "Laquiores Garcia",
+        "employee_type": "full_time", "phone_number": "1234567890", "address": "123 Main St"
+    },
 ]
 
 # Delete existing records
@@ -349,7 +355,7 @@ prescriptions = [
         "dosage": "500mg",
         "frequency": "3 times a day",
         "duration": "7 days",
-        "prescribed_by": "johnbaker",
+        "prescribed_by": "floigarcia",
     },
     {
         "pdl_profile": "janesmith",
@@ -357,7 +363,7 @@ prescriptions = [
         "dosage": "200mg",
         "frequency": "2 times a day",
         "duration": "5 days",
-        "prescribed_by": "alicecooper",
+        "prescribed_by": "floigarcia",
     },
     {
         "pdl_profile": "johndoe",
@@ -365,7 +371,7 @@ prescriptions = [
         "dosage": "50mg",
         "frequency": "once a day",
         "duration": "30 days",
-        "prescribed_by": "johnbaker",
+        "prescribed_by": "floigarcia",
     },
     {
         "pdl_profile": "janesmith",
@@ -373,7 +379,7 @@ prescriptions = [
         "dosage": "10mg",
         "frequency": "once a day",
         "duration": "14 days",
-        "prescribed_by": "alicecooper",
+        "prescribed_by": "floigarcia",
     },
     {
         "pdl_profile": "johndoe",
@@ -381,7 +387,7 @@ prescriptions = [
         "dosage": "500mg",
         "frequency": "every 6 hours as needed",
         "duration": "3 days",
-        "prescribed_by": "johnbaker",
+        "prescribed_by": "floigarcia",
     },
 ]
 

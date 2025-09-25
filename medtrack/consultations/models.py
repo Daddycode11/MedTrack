@@ -115,11 +115,21 @@ class Consultation(models.Model):
     """
     Model representing a consultation.
     """
+    class Status(models.TextChoices):
+        SCHEDULED = 'scheduled', 'Scheduled'
+        COMPLETED = 'completed', 'Completed'
+        CANCELED  = 'canceled',  'Canceled'
+
     pdl_profile = models.ForeignKey(PDLProfile, on_delete=models.CASCADE)
     physician = models.ForeignKey(Physician, on_delete=models.CASCADE)
-    location = models.ForeignKey(ConsultationLocation, on_delete=models.CASCADE)
+    location = models.ForeignKey(ConsultationLocation, on_delete=models.CASCADE, blank=True, null=True)
     reason = models.ForeignKey(ConsultationReason, on_delete=models.CASCADE)
-    status = models.CharField(max_length=20, choices=[('scheduled', 'Scheduled'), ('completed', 'Completed'), ('canceled', 'Canceled')], default='scheduled')
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.SCHEDULED,
+    )
     consultation_date_date_only = models.DateField(default=None)
     consultation_time_block = models.CharField(
         max_length=20, 
@@ -269,7 +279,7 @@ class Consultation(models.Model):
         # lookup block name in enum
         block_name = self.consultation_time_block
         block_value = ConsultationTimeBlock[block_name].value[1]
-        return f"Consultation with {self.physician} on {self.consultation_date_date_only.strftime('%d %B %Y')} at {block_value} in {self.location.room_number}"
+        return f"Consultation with {self.physician} on {self.consultation_date_date_only.strftime('%d %B %Y')}"
     
     @property
     def consultation_time_block_display(self):

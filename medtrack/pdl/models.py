@@ -126,6 +126,7 @@ class DetentionInstance(models.Model):
         related_name='detention_instances',
         verbose_name=_("PDL Profile")
     )
+    detention_room_number = models.CharField(_("Detention Room Number"), blank=True, null=True)
     detention_term_length = models.IntegerField(_("Detention Term Length"), default=0, blank=True, null=True)
     detention_status = models.ForeignKey(
         DetentionStatus, 

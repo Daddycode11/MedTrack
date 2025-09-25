@@ -97,12 +97,14 @@ class DetentionInstanceForm(forms.ModelForm):
     """
     class Meta:
         model = DetentionInstance
-        fields = ['detention_status', 'detention_reason', 'detention_term_length', 'detention_start_date', 'detention_end_date', 'notes']
+        fields = ['detention_status', 'detention_reason', 'detention_term_length', 'detention_start_date', 'detention_end_date', 'detention_room_number','notes']
         widgets = {
             'detention_status': forms.Select(attrs={'class': 'form-select'}),
             'detention_reason': forms.Select(attrs={'class': 'form-select'}),
             'detention_term_length': forms.NumberInput(attrs={'class': 'form-control'}),
             'detention_start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'detention_end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'detention_room_number': forms.TextInput(attrs={'class': 'form-control'}),
+
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }

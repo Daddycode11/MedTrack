@@ -41,7 +41,17 @@
           <div class="col-lg-4 col-md-6">{{ form.consultation_date_date_only.label_tag }}{{ form.consultation_date_date_only }}{% if form.consultation_date_date_only.errors %}<div class="text-danger small">{{ form.consultation_date_date_only.errors }}</div>{% endif %}</div>
           <div class="col-lg-4 col-md-6">{{ form.consultation_time_block.label_tag }}{{ form.consultation_time_block }}{% if form.consultation_time_block.errors %}<div class="text-danger small">{{ form.consultation_time_block.errors }}</div>{% endif %}</div>
           <div class="col-lg-4 col-md-6">{{ form.pdl_profile.label_tag }}{{ form.pdl_profile }}{% if form.pdl_profile.errors %}<div class="text-danger small">{{ form.pdl_profile.errors }}</div>{% endif %}</div>
-          <div class="col-lg-4 col-md-6">{{ form.location.label_tag }}{{ form.location }}{% if form.location.errors %}<div class="text-danger small">{{ form.location.errors }}</div>{% endif %}</div>
+          <div class="col-lg-4 col-md-6">
+
+<div class="col-md-6">
+  <label for="id_detention_room_number" class="form-label">Detention room (auto)</label>
+  <input type="text" id="id_detention_room_number" name="detention_room_number"
+         class="form-control" readonly>
+  <div class="form-text">Auto-filled from selected PDL profile.</div>
+</div>
+
+            
+          </div>
           <div class="col-lg-4 col-md-6">{{ form.physician.label_tag }}{{ form.physician }}{% if form.physician.errors %}<div class="text-danger small">{{ form.physician.errors }}</div>{% endif %}</div>
           <div class="col-lg-4 col-md-6">{{ form.reason.label_tag }}{{ form.reason }}{% if form.reason.errors %}<div class="text-danger small">{{ form.reason.errors }}</div>{% endif %}</div>
           <div class="col-12">{{ form.notes.label_tag }}{{ form.notes }}{% if form.notes.errors %}<div class="text-danger small">{{ form.notes.errors }}</div>{% endif %}</div>
@@ -146,4 +156,88 @@
     </div>
   </form>
 </div>
+<script>
+(function () {
+  function wireUp() {
+    const sel = document.getElementById('pdlSelect');           // make sure this ID truly exists
+    const roomBadge = document.getElementById('pdl-room-display'); // optional
+    const roomInput = document.getElementById('id_detention_room_number'); // your readonly input
+
+    if (!sel) { console.log('pdlSelect not found'); return; }
+    console.log('pdlSelect found');
+
+    sel.addEventListener('change', async function (e) {
+      const val = e.target.value;
+      console.log('pdl change ->', val);
+      if (!val) {
+        if (roomBadge) roomBadge.textContent = '—';
+        if (roomInput) roomInput.value = '';
+        return;
+      }
+
+      const url = `/pdl/api/pdl/${encodeURIComponent(val)}/latest-room/`;
+      console.log('fetching:', url);
+
+      try {
+        const resp = await fetch(url, {
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        console.log('status:', resp.status, 'redirected:', resp.redirected, 'finalURL:', resp.url);
+        const ct = resp.headers.get('content-type') || '';
+        const text = await resp.text();
+        console.log('content-type:', ct);
+        console.log('raw body ->', text);
+
+        if (!resp.ok) {
+          console.warn('non-OK response');
+          return;
+        }
+
+        // If we got HTML (e.g., login page), bail clearly
+        if (!ct.includes('application/json')) {
+          console.warn('Expected JSON but got', ct);
+          return;
+        }
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          console.error('JSON parse error:', e);
+          return;
+        }
+
+        console.log('parsed data:', data);
+
+        // Use the key your API returns
+        const rn = (data && data.room_number) ? data.room_number : '';
+
+        if (roomBadge) roomBadge.textContent = rn || '—';
+        if (roomInput) {
+          roomInput.value = rn || 'No Room Data';
+          roomInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      } catch (err) {
+        console.error('room fetch failed:', err);
+      }
+    });
+
+    // prime
+    if (sel.value) sel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wireUp);
+  } else {
+    wireUp();
+  }
+  document.addEventListener('turbo:load', wireUp);
+  document.addEventListener('htmx:afterSettle', wireUp);
+})();
+</script>
+
+
 {% endblock %}
