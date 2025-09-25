@@ -35,3 +35,4 @@ def prescription_list(request, medication_id):
         'medication': medication,
         'prescriptions': prescriptions
     })
+

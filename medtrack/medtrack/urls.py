@@ -22,6 +22,7 @@ urlpatterns = [
     path('pdl/', include('pdl.urls')),  # Include the URLs from the pdl app
     path('consultations/', include('consultations.urls')),  # Include the URLs from the consultations app
     path('medications/', include('medications.urls')),  # Include the URLs from the medications app
+    path("reports", include("reports.urls")),
 ]
 
 # redirect root URL to pdl app

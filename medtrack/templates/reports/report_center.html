@@ -1,0 +1,138 @@
+<!-- templates/reports/report_center.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Report Center — Consultations</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+  /* late-90s/early-00s vibe: simple monospace, borders, muted blue links */
+  :root{
+    --ink:#000;
+    --muted:#444;
+    --grid:#999;
+    --bg:#fff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink)}
+  body{font-family: "Arial", sans-serif; font-size:14px; line-height:1.25;}
+  .wrap{max-width:980px;margin:0 auto;padding:16px}
+  h1{margin:0 0 8px 0;font-size:18px}
+  .sub{color:var(--muted);margin-bottom:16px}
+  .bar{
+    display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    border:1px solid var(--grid); padding:8px; margin:12px 0;
+    background:#f9f9f9;
+  }
+  a{color:#0033cc;text-decoration:underline}
+  .table{width:100%;border-collapse:collapse;margin:10px 0 24px 0}
+  .table th,.table td{border:1px solid var(--grid);padding:6px 8px;vertical-align:top}
+  .table th{background:#efefef;text-align:left}
+  .right{text-align:right}
+  .muted{color:var(--muted)}
+  .section-title{margin-top:24px;border-bottom:2px solid #000;padding-bottom:2px}
+  .footer{margin-top:24px;color:var(--muted);font-size:12px;border-top:1px solid var(--grid);padding-top:8px}
+  .mono{font-family: "Courier New", Courier, monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Report Center — Consultations</h1>
+  <div class="sub">Generated: <span class="mono">{{ today }}</span></div>
+
+  <div class="bar">
+    <b>Export CSV:</b>
+    <a href="?export=csv&period=week">Weekly</a> |
+    <a href="?export=csv&period=month">Monthly</a> |
+    <a href="?export=csv&period=year">Yearly</a> | 
+    <a href="/">Homepage</a>
+  </div>
+
+  <h2 class="section-title">Weekly (last 12 weeks)</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Week</th>
+        <th class="right">Total</th>
+        <th class="right">Completed</th>
+        <th class="right">Scheduled</th>
+        <th class="right">Canceled</th>
+        <th class="right">Emergencies</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in weeks %}
+      <tr>
+        <td>{{ r.label }}</td>
+        <td class="right">{{ r.total }}</td>
+        <td class="right">{{ r.completed }}</td>
+        <td class="right">{{ r.scheduled }}</td>
+        <td class="right">{{ r.canceled }}</td>
+        <td class="right">{{ r.emergencies }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="muted">No data.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2 class="section-title">Monthly (last 12 months)</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Month</th>
+        <th class="right">Total</th>
+        <th class="right">Completed</th>
+        <th class="right">Scheduled</th>
+        <th class="right">Canceled</th>
+        <th class="right">Emergencies</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in months %}
+      <tr>
+        <td>{{ r.label }}</td>
+        <td class="right">{{ r.total }}</td>
+        <td class="right">{{ r.completed }}</td>
+        <td class="right">{{ r.scheduled }}</td>
+        <td class="right">{{ r.canceled }}</td>
+        <td class="right">{{ r.emergencies }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="muted">No data.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2 class="section-title">Yearly (last 5 years)</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Year</th>
+        <th class="right">Total</th>
+        <th class="right">Completed</th>
+        <th class="right">Scheduled</th>
+        <th class="right">Canceled</th>
+        <th class="right">Emergencies</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in years %}
+      <tr>
+        <td>{{ r.label }}</td>
+        <td class="right">{{ r.total }}</td>
+        <td class="right">{{ r.completed }}</td>
+        <td class="right">{{ r.scheduled }}</td>
+        <td class="right">{{ r.canceled }}</td>
+        <td class="right">{{ r.emergencies }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="muted">No data.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+</body>
+</html>

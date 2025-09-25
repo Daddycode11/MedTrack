@@ -25,6 +25,8 @@ from . import views
 app_name = 'consultations'
 
 urlpatterns = [
+    path("new/", views.ConsultationCreateView.as_view(), name="consultation_create"),
+
     path('doctor-dashboard', views.doctor_dashboard, name='doctor_dashboard'),
     path('calendar/', views.all_consultations, name='consultation_calendar'),
     path('calendar-physician/<int:physician_id>/', views.consultations_by_physician, name='consultation_calendar_physician'),

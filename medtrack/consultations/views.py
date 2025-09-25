@@ -395,11 +395,42 @@ def consultation_time_block_list_api(request):
                 'display': block.value[1]  # Send the formatted display time
             })
     return JsonResponse(time_blocks, safe=False)
-
-
+from django.utils import timezone
 def consultation_printable(request, pk):
     """
     Renders a printable, IRS/US-gov style form for a single Consultation.
     """
     obj = get_object_or_404(Consultation, pk=pk)
-    return render(request, "consultations/consultation_printable.html", {"c": obj})
+    return render(request, "consultations/consultation_printable.html", {"c": obj, "now": timezone.localtime()})  # or timezone.now()})
+
+# apps/consultations/views.py
+from django.urls import reverse_lazy
+from django.views.generic import CreateView
+from django.contrib import messages
+from django.utils.dateparse import parse_date
+
+from .models import Consultation
+from .forms import ScheduleConsultationForm
+
+class ConsultationCreateView(CreateView):
+    model = Consultation
+    form_class = ScheduleConsultationForm
+    template_name = "consultations/consultation_form.html"
+    success_url = reverse_lazy("consultations:consultation_calendar")
+
+    def get_initial(self):
+        initial = super().get_initial()
+        # If coming from calendar: /consultations/new/?date=YYYY-MM-DD
+        qd = self.request.GET.get("date")
+        d = parse_date(qd) if qd else None
+        if d:
+            initial["consultation_date_date_only"] = d
+        return initial
+
+    def form_valid(self, form):
+        messages.success(self.request, "Consultation scheduled.")
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, "Please correct the errors below.")
+        return super().form_invalid(form)

@@ -5,26 +5,279 @@ Add New PDL
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4 mx-5">
+<div class="container-fluid mt-4">
     <h1 class="h3 mb-4"><i class="bi bi-person-plus"></i> Add New PDL</h1>
-    <div class="card shadow col-lg-6 px-4 py-2">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                <h4><i class="bi bi-person"></i> User Information</h4>
-                {{ user_form.as_p }}
-                <h4 class="mt-4"><i class="bi bi-card-heading"></i> PDL Profile Information</h4>
-                {{ pdl_profile_form.as_p }}
-                <h4 class="mt-4"><i class="bi bi-info-circle"></i> Detention Instance Details</h4>
-                {{ detention_instance_form.as_p }}
-                <button type="submit" class="btn btn-primary mt-3">
-                    <i class="bi bi-save"></i> Save
-                </button>
-                <a href="{% url 'pdl:pdl_list' %}" class="btn btn-secondary mt-3">
-                    <i class="bi bi-x-circle"></i> Cancel
-                </a>
-            </form>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="card shadow">
+            <div class="card-body">
+                <!-- Tabs -->
+                <ul class="nav nav-tabs" id="pdlTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="user-tab" data-bs-toggle="tab" data-bs-target="#user" type="button" role="tab">
+                            <i class="bi bi-person"></i> User Info
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
+                            <i class="bi bi-card-heading"></i> PDL Profile
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="detention-tab" data-bs-toggle="tab" data-bs-target="#detention" type="button" role="tab">
+                            <i class="bi bi-info-circle"></i> Detention Details
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab contents -->
+                <div class="tab-content mt-3" id="pdlTabsContent">
+                    <!-- User Info -->
+                    <div class="tab-pane fade show active" id="user" role="tabpanel">
+                        <div class="row g-3">
+                            {% for field in user_form %}
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <div class="form-text">{{ field.help_text }}</div>
+                                    {% endif %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger small">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- PDL Profile -->
+                    <div class="tab-pane fade" id="profile" role="tabpanel">
+                        <div class="row g-3">
+                            {% for field in pdl_profile_form %}
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <div class="form-text">{{ field.help_text }}</div>
+                                    {% endif %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger small">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Detention Details -->
+                    <div class="tab-pane fade" id="detention" role="tabpanel">
+                        <div class="row g-3">
+                            {% for field in detention_instance_form %}
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <div class="form-text">{{ field.help_text }}</div>
+                                    {% endif %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger small">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save
+                    </button>
+                    <a href="{% url 'pdl:pdl_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </div>
         </div>
-    </div>
+    </form>
 </div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.querySelector("form");
+  const tabButtons = {
+    user:      document.querySelector('#user-tab'),
+    profile:   document.querySelector('#profile-tab'),
+    detention: document.querySelector('#detention-tab'),
+  };
+  const tabPanes = {
+    user:      document.querySelector('#user'),
+    profile:   document.querySelector('#profile'),
+    detention: document.querySelector('#detention'),
+  };
+
+  // ---------- A) UTILITIES
+  function isEmptyField(el){
+    // Consider text, email, number, selects, textareas
+    if (el.disabled || el.readOnly) return false;
+    const tag = el.tagName.toLowerCase();
+    if (tag === 'select') return (el.value === '' || el.value == null);
+    if (tag === 'textarea') return el.value.trim() === '';
+    if (tag === 'input') {
+      const type = (el.getAttribute('type') || 'text').toLowerCase();
+      if (['checkbox','radio'].includes(type)) {
+        // A required radio/checkbox group is valid if at least one is checked
+        const name = el.name;
+        const group = form.querySelectorAll(`input[name="${CSS.escape(name)}"]`);
+        return ![...group].some(g => g.checked);
+      }
+      return el.value.trim() === '';
+    }
+    return false;
+  }
+
+  function markInvalid(el, message){
+    if (!el.classList.contains('is-invalid')) {
+      el.classList.add('is-invalid');
+      el.setAttribute('aria-invalid','true');
+      // attach feedback element (only once)
+      let fb = el.nextElementSibling;
+      const defaultMsg = "This field is required.";
+      if (!fb || !fb.classList.contains('invalid-feedback')) {
+        fb = document.createElement('div');
+        fb.className = 'invalid-feedback';
+        el.insertAdjacentElement('afterend', fb);
+      }
+      // Prefer server message if already rendered; otherwise custom msg
+      fb.textContent = message || defaultMsg;
+    }
+  }
+
+  function clearInvalid(el){
+    el.classList.remove('is-invalid');
+    el.removeAttribute('aria-invalid');
+    const fb = el.nextElementSibling;
+    if (fb && fb.classList.contains('invalid-feedback')) {
+      // keep element but hide text; will be shown again if needed
+      fb.textContent = '';
+    }
+  }
+
+  function updateTabIndicators(){
+    for (const [key, pane] of Object.entries(tabPanes)) {
+      const hasErr = pane.querySelector('.is-invalid, .text-danger.small');
+      tabButtons[key].classList.toggle('tab-has-error', !!hasErr);
+    }
+  }
+
+  function showTabFor(el){
+    const pane = el.closest('.tab-pane');
+    if (!pane) return;
+    const id = pane.id;
+    const button = document.querySelector(`[data-bs-target="#${id}"]`);
+    if (button) {
+      new bootstrap.Tab(button).show();
+    }
+  }
+
+  // ---------- B) VALIDATION ON SUBMIT
+  function validateForm(){
+    const offenders = [];
+    // 1) HTML5 required & empties
+    const requiredEls = form.querySelectorAll("input[required], select[required], textarea[required]");
+    requiredEls.forEach(el => {
+      // For radio/checkbox groups, only validate one representative
+      if (el.type === 'radio' || el.type === 'checkbox') {
+        if (form.querySelectorAll(`input[name="${CSS.escape(el.name)}"]`)[0] !== el) return;
+      }
+      if (isEmptyField(el)) offenders.push(el);
+    });
+
+    // 2) Existing server-side field errors: mark inputs associated with .text-danger (already in your template)
+    form.querySelectorAll('.text-danger.small').forEach(errEl => {
+      const wrapper = errEl.closest('.col-md-6') || errEl.closest('.mb-3') || errEl.parentElement;
+      const input = wrapper ? wrapper.querySelector('input, select, textarea') : null;
+      if (input) offenders.push(input);
+    });
+
+    // Deduplicate
+    const unique = [...new Set(offenders)];
+    // Mark
+    unique.forEach(el => markInvalid(el));
+    updateTabIndicators();
+
+    return unique;
+  }
+
+  form.addEventListener('submit', function(e){
+    const invalid = validateForm();
+    if (invalid.length > 0) {
+      e.preventDefault();
+      const first = invalid[0];
+      showTabFor(first);
+      // Scroll into view then focus
+      first.scrollIntoView({block:'center', behavior: 'smooth'});
+      setTimeout(() => first.focus({preventScroll:true}), 300);
+    }
+  });
+
+  // ---------- C) LIVE CLEANUP: as user types/selects, clear the error state
+  form.addEventListener('input', function(e){
+    const el = e.target.closest('input, select, textarea');
+    if (!el) return;
+    if (!el.hasAttribute('required')) {
+      // If server-side error existed, clear when value is non-empty
+      if (el.classList.contains('is-invalid') && el.value.trim() !== '') clearInvalid(el);
+    } else {
+      if (!isEmptyField(el)) clearInvalid(el);
+    }
+    updateTabIndicators();
+  });
+
+  form.addEventListener('change', function(e){
+    const el = e.target.closest('input, select, textarea');
+    if (!el) return;
+    if (!isEmptyField(el)) clearInvalid(el);
+    updateTabIndicators();
+  });
+
+  // ---------- D) ON LOAD: reflect existing server-side errors & open that tab
+  (function primeFromServerErrors(){
+    // Mark anything that already has server errors
+    form.querySelectorAll('.text-danger.small').forEach(errEl => {
+      const wrapper = errEl.closest('.col-md-6') || errEl.closest('.mb-3') || errEl.parentElement;
+      const input = wrapper ? wrapper.querySelector('input, select, textarea') : null;
+      if (input) markInvalid(input, errEl.textContent.trim());
+    });
+    updateTabIndicators();
+    const firstInvalid = form.querySelector('.is-invalid');
+    if (firstInvalid) {
+      showTabFor(firstInvalid);
+    }
+  })();
+
+  // ---------- E) (Your existing username/email autofill kept as-is)
+  const firstNameInput = document.getElementById("id_first_name");
+  const lastNameInput = document.getElementById("id_last_name");
+  const usernameInput = document.getElementById("id_username");
+  const emailInput = document.getElementById("id_email");
+
+  function updateCredentials() {
+      const first = (firstNameInput?.value || '').trim().toLowerCase() || 'nofirstname';
+      const last  = (lastNameInput?.value  || '').trim().toLowerCase() || 'nolastname';
+      const base = `${first}.${last}`;
+      if (usernameInput) usernameInput.value = base;
+      if (emailInput) emailInput.value = `${base}@bjmptest.com`;
+  }
+
+  if (usernameInput) usernameInput.readOnly = true;
+  if (emailInput) emailInput.readOnly = true;
+
+  firstNameInput?.addEventListener("input", updateCredentials);
+  lastNameInput?.addEventListener("input", updateCredentials);
+  updateCredentials();
+});
+</script>
+
+
 {% endblock %}

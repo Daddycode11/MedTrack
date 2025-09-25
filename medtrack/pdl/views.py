@@ -34,7 +34,7 @@ def pdl_list(request):
     pdl_filter = PDLFilter(request.GET, queryset=detention_instances)
 
     # Pagination
-    paginator = Paginator(pdl_filter.qs, 10)  # Show 10 PDLs per page
+    paginator = Paginator(pdl_filter.qs, 30)  # Show 10 PDLs per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -109,3 +109,4 @@ def add_pdl(request):
         'pdl_profile_form': pdl_profile_form,
         'detention_instance_form': detention_instance_form,
     })
+    
