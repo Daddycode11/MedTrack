@@ -36,3 +36,32 @@ def prescription_list(request, medication_id):
         'prescriptions': prescriptions
     })
 
+
+# pharmacy/views.py
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from .forms import MedicationPrescriptionForm
+
+@login_required
+def prescription_create(request):
+    if request.method == "POST":
+        form = MedicationPrescriptionForm(request.POST)
+        if form.is_valid():
+            presc = form.save()
+            messages.success(request, "Prescription recorded successfully.")
+            return redirect(reverse("medications:prescription_detail", args=[presc.id]))
+        messages.error(request, "Please correct the errors below.")
+    else:
+        form = MedicationPrescriptionForm()
+    return render(request, "medications/prescription_form.html", {"form": form})
+
+# pharmacy/views.py (add this simple placeholder)
+from django.shortcuts import get_object_or_404
+from .models import MedicationPrescription
+
+@login_required
+def prescription_detail(request, pk):
+    obj = get_object_or_404(MedicationPrescription, pk=pk)
+    return render(request, "medications/prescription_detail.html", {"obj": obj})

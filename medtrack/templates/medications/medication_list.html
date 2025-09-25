@@ -38,6 +38,14 @@ Medication List
         </form>
     </div>
 
+    <div class="mb-5">
+        <a class="btn btn-primary" href="{% url 'medications:prescription_create' %}">
+            <i class="bi bi-plus">
+                Add Prescription
+            </i>
+        </a>
+    </div>
+
     <div class="accordion" id="medicationAccordion">
         {% for medication_type, medications in grouped_medications.items %}
         <div class="accordion-item">
