@@ -174,7 +174,7 @@ def doctor_dashboard(request):
     """
     
     # Emulate view by fetching 'jessicaadams' physician
-    physician = get_object_or_404(Physician, username__username='jessicaadams')
+    physician = get_object_or_404(Physician, username__username='floigarcia')
 
     # Fetch the next three upcoming consultations for the physician
     upcoming_consultations = Consultation.objects.filter(

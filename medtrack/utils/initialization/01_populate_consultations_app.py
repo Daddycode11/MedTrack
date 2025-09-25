@@ -49,7 +49,7 @@ physicians = [
         "employee_type": "contract",
         "specialty": MedicalSpecialty.objects.get(name="JO1 Registered Nurse"),
         "phone_number": "555-4321",
-        "email": "jessicaadams@email.com",
+        "email": "floigarcia@email.com",
         "address": "321 Pine St, Springfield"
     },
 ]
