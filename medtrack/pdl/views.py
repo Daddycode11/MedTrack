@@ -15,34 +15,89 @@ def index(request):
     View function for the index page.
     """
     return render(request, "index.html")
+from django.core.paginator import Paginator
+from django.db.models import Count
+from django.shortcuts import render
+from .models import DetentionInstance
+from .filters import PDLFilter
 
 def pdl_list(request):
     """
-    View function to display a list of PDLs with filters and consultation counts.
+    List PDLs with filters, consultation counts, and summary groupings.
     """
-    # Fetch detention instances and annotate with consultation counts
-    detention_instances = DetentionInstance.objects.select_related(
-        'pdl_profile', 'detention_status', 'detention_reason'
-    ).annotate(
-        consultation_count=Count(
-            'pdl_profile__consultation',
-            filter=Q(pdl_profile__consultation__status='scheduled')
+    detention_instances = (
+        DetentionInstance.objects
+        .select_related('pdl_profile', 'detention_status', 'detention_reason')
+        .annotate(
+            # per-row consultation count for display
+            consultation_count=Count('pdl_profile__consultation', distinct=True)
         )
     )
 
-    # Apply filters
     pdl_filter = PDLFilter(request.GET, queryset=detention_instances)
+    qs = pdl_filter.qs
+
+    # Overall totals
+    total_pdl_rows = qs.count()
+    total_consults = qs.aggregate(
+        s=Count('pdl_profile__consultation', distinct=True)
+    )['s'] or 0
+
+    # By sex (from PDLProfile.sex)
+    by_sex = list(
+        qs.values('pdl_profile__sex')
+          .annotate(
+              count=Count('id'),
+              consults=Count('pdl_profile__consultation', distinct=True),
+          )
+          .order_by('-count')
+    )
+    sex_label = {'M': 'Male', 'F': 'Female', None: 'Unknown', '': 'Unknown'}
+    for row in by_sex:
+        row['label'] = sex_label.get(row['pdl_profile__sex'], 'Unknown')
+
+    # By detention status (field is "status", not "name")
+    by_status = list(
+        qs.values('detention_status__id', 'detention_status__status')
+          .annotate(
+              count=Count('id'),
+              consults=Count('pdl_profile__consultation', distinct=True),
+          )
+          .order_by('-count')
+    )
+    for row in by_status:
+        row['label'] = row.get('detention_status__status') or 'Unspecified'
+
+    # By detention reason (field is "reason")
+    by_reason = list(
+        qs.values('detention_reason__id', 'detention_reason__reason')
+          .annotate(
+              count=Count('id'),
+              consults=Count('pdl_profile__consultation', distinct=True),
+          )
+          .order_by('-count')
+    )
+    for row in by_reason:
+        row['label'] = row.get('detention_reason__reason') or 'Unspecified'
+
+    summary = {
+        'total_pdl_rows': total_pdl_rows,
+        'total_consults': total_consults,
+        'by_sex': by_sex,
+        'by_status': by_status,
+        'by_reason': by_reason,
+    }
 
     # Pagination
-    paginator = Paginator(pdl_filter.qs, 30)  # Show 10 PDLs per page
+    paginator = Paginator(qs, 30)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     context = {
         'filter': pdl_filter,
         'page_obj': page_obj,
+        'summary': summary,
     }
-
     return render(request, 'pdl/pdl_list.html', context=context)
 
 def pdl_profile(request, username):
@@ -140,3 +195,70 @@ def pdl_detention_room_api(request, pk: int):
     return JsonResponse({
         "room_number": room_number,
     })
+
+
+# pdl/views.py
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib import messages
+from django.db import transaction
+
+from django.contrib.auth.models import User
+from .models import PDLProfile, DetentionInstance
+from .forms import UserForm, PDLProfileForm, DetentionInstanceForm
+
+
+def edit_pdl(request, pdl_id):
+    """
+    Edit an existing PDL (User + PDLProfile + latest DetentionInstance) in one page.
+    Non-tabbed Bootstrap layout with three sections.
+    """
+    pdl_profile = get_object_or_404(
+        PDLProfile.objects.select_related("username").prefetch_related("detention_instances"),
+        pk=pdl_id
+    )
+    user = pdl_profile.username
+
+    # Current (latest) detention instance or None
+    detention_instance = (
+        pdl_profile.detention_instances
+        .order_by("-detention_start_date", "-created_at")
+        .first()
+    )
+
+    if request.method == "POST":
+        user_form = UserForm(request.POST, instance=user)
+        pdl_profile_form = PDLProfileForm(request.POST, instance=pdl_profile)
+        detention_instance_form = DetentionInstanceForm(request.POST, instance=detention_instance)
+
+        # Save everything atomically
+        if user_form.is_valid() and pdl_profile_form.is_valid() and detention_instance_form.is_valid():
+            with transaction.atomic():
+                user = user_form.save()
+
+                p = pdl_profile_form.save(commit=False)
+                p.username = user  # keep link consistent
+                p.save()
+
+                di = detention_instance_form.save(commit=False)
+                di.pdl_profile = p
+                di.save()
+
+            messages.success(request, "PDL details have been updated.")
+            return redirect("pdl:pdl_list")
+        else:
+            messages.error(request, "Please check the form for errors.")
+    else:
+        user_form = UserForm(instance=user)
+        pdl_profile_form = PDLProfileForm(instance=pdl_profile)
+        detention_instance_form = DetentionInstanceForm(instance=detention_instance)
+
+    return render(
+        request,
+        "pdl/edit_pdl.html",
+        {
+            "pdl_profile": pdl_profile,
+            "user_form": user_form,
+            "pdl_profile_form": pdl_profile_form,
+            "detention_instance_form": detention_instance_form,
+        },
+    )

@@ -106,22 +106,25 @@ Consultation Calendar
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="modal-footer">
-                                                {% if consultation.status != "canceled" %}
-                                                <a href="{% url 'consultations:consultation_printable' consultation.id %}"
-                                                class="btn btn-success">
-                                                    <i class="bi bi-printer"></i> Print
-                                                </a>
-                                                <a href="{% url 'consultations:reschedule_consultation' consultation.id %}"
-                                                class="btn btn-warning">
-                                                    <i class="bi bi-arrow-clockwise"></i> Reschedule
-                                                </a>
-                                                <a href="{% url 'consultations:cancel_consultation' consultation.id %}" class="btn btn-danger">
-                                                    <i class="bi bi-x-circle"></i> Cancel
-                                                </a>
-                                                {% endif %}
-                                        
-                                            </div>
+<div class="modal-footer">
+  <!-- Always allow printing -->
+  <a href="{% url 'consultations:consultation_printable' consultation.id %}" class="btn btn-success">
+    <i class="bi bi-printer"></i> Print
+  </a>
+
+  <!-- Keep other actions conditional -->
+  {% if consultation.status != "canceled" and consultation.status != "completed" %}
+    <a href="{% url 'consultations:reschedule_consultation' consultation.id %}" class="btn btn-warning">
+      <i class="bi bi-arrow-clockwise"></i> Reschedule
+    </a>
+    <a href="{% url 'consultations:complete_consultation' consultation.id %}" class="btn btn-primary">
+      <i class="bi bi-check-circle"></i> Complete
+    </a>
+    <a href="{% url 'consultations:cancel_consultation' consultation.id %}" class="btn btn-danger">
+      <i class="bi bi-x-circle"></i> Cancel
+    </a>
+  {% endif %}
+</div>
                                         </div>
                                     </div>
                                 </div>

@@ -15,6 +15,7 @@ Prescriptions for {{ medication.name }}
                 <th>Frequency</th>
                 <th>Duration</th>
                 <th>Prescribed By</th>
+                <th>Print</th>
             </tr>
         </thead>
         <tbody>
@@ -25,6 +26,12 @@ Prescriptions for {{ medication.name }}
                 <td>{{ prescription.frequency }}</td>
                 <td>{{ prescription.duration }}</td>
                 <td>{{ prescription.prescribed_by }}</td>
+                <td>
+                                    <a class="btn btn-sm btn-outline-primary"
+                href="{% url 'medications:prescription_printable' prescription.id %}">
+                Print RX
+                </a>
+                </td>
             </tr>
             {% empty %}
             <tr>

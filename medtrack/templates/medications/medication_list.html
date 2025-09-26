@@ -1,95 +1,100 @@
 {% extends "base.html" %}
 
-{% load widget_tweaks %}
-
-{% block title %}
-Medication List
-{% endblock %}
+{% block title %}Current Prescriptions by PDL{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="h3 text-center mb-4">Medication List</h1>
-
-    <!-- Filter Form -->
-    <div class="pb-4">
-        <form method="get" class="mb-4 form-inline small mb-3">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    {{ filter.form.name.label_tag }}
-                    {{ filter.form.name|add_class:"form-control" }}
-                </div>
-                <div class="col-md-3">
-                    {{ filter.form.generic_name.label_tag }}
-                    {{ filter.form.generic_name|add_class:"form-control" }}
-                </div>
-                <div class="col-md-3">
-                    {{ filter.form.dosage_form.label_tag }}
-                    {{ filter.form.dosage_form|add_class:"form-select" }}
-                </div>
-                <div class="col-md-3">
-                    {{ filter.form.route_of_administration.label_tag }}
-                    {{ filter.form.route_of_administration|add_class:"form-select" }}
-                </div>
-            </div>
-            <div class="mt-3">
-                <button type="submit" class="btn btn-primary">Filter</button>
-                <a href="{% url 'medications:medication_list' %}" class="btn btn-secondary">Reset</a>
-            </div>
-        </form>
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <h1 class="h3 m-0">Current Prescriptions by PDL</h1>
+    <div class="text-muted small">
+      {{ totals.rx_count }} prescriptions • {{ totals.pdl_count }} PDLs
     </div>
+  </div>
 
-    <div class="mb-5">
-        <a class="btn btn-primary" href="{% url 'medications:prescription_create' %}">
-            <i class="bi bi-plus">
-                Add Prescription
-            </i>
+  <!-- Simple search -->
+  <form method="get" class="row g-2 align-items-end mb-4">
+    <div class="col-md-6">
+      <label class="form-label small text-muted">Search (PDL or Medication)</label>
+      <input type="text" class="form-control" name="q" value="{{ q }}" placeholder="e.g., Dela Cruz, Amoxicillin">
+    </div>
+    <div class="col-md-6">
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-search me-1"></i>Filter
+        </button>
+        <a href="{% url 'medications:medication_list' %}" class="btn btn-secondary">Reset</a>
+        <a class="btn btn-success ms-auto" href="{% url 'medications:prescription_create' %}">
+          <i class="bi bi-plus-circle me-1"></i>Add Prescription
         </a>
+      </div>
     </div>
+  </form>
 
-    <div class="accordion" id="medicationAccordion">
-        {% for medication_type, medications in grouped_medications.items %}
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="heading{{ forloop.counter }}">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
-                    {{ medication_type }}
-                </button>
-            </h2>
-            <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#medicationAccordion">
-                <div class="accordion-body">
-                    <table class="table table-bordered table-hover">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Generic Name</th>
-                                <th>Dosage Form</th>
-                                <th>Strength</th>
-                                <th>Route of Administration</th>
-                                <th>Manufacturer</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for medication in medications %}
-                            <tr>
-                                <td>{{ medication.name }}</td>
-                                <td>{{ medication.generic_name.name }}</td>
-                                <td>{{ medication.get_dosage_form_display }}</td>
-                                <td>{{ medication.strength }}</td>
-                                <td>{{ medication.get_route_of_administration_display }}</td>
-                                <td>{{ medication.manufacturer }}</td>
-                                <td>
-                                    <a href="{% url 'medications:prescription_list' medication.id %}" class="text-primary text-decoration-none">
-                                        <i class="bi bi-eye"></i> View Current Prescriptions ({{ medication.prescription_count }})
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+  {% if grouped_by_pdl %}
+    {% for p in grouped_by_pdl.values %}
+      {% with pdl=p.pdl items=p.items %}
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center bg-light">
+          <div class="d-flex align-items-center gap-3">
+            {% if pdl.profile_picture_url %}
+              <img src="{{ pdl.profile_picture_url }}" alt="{{ pdl }}" width="40" height="40"
+                   class="rounded-circle object-fit-cover border" loading="lazy" referrerpolicy="no-referrer">
+            {% else %}
+              <i class="bi bi-person-circle fs-3 text-secondary" aria-hidden="true"></i>
+              <span class="visually-hidden">No profile photo</span>
+            {% endif %}
+            <div>
+              <div class="fw-semibold">{{ pdl }}</div>
+              <div class="text-muted small">@{{ pdl.username.username }}</div>
             </div>
+          </div>
+          <span class="badge text-bg-primary">{{ items|length }} rx</span>
         </div>
-        {% endfor %}
-    </div>
+
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover m-0 align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="min-width:180px;">Medication</th>
+                  <th>Generic</th>
+                  <th>Strength</th>
+                  <th>Route</th>
+                  <th>Dosage</th>
+                  <th>Frequency</th>
+                  <th>Duration</th>
+                  <th>Prescribed By</th>
+                  <th style="width:1%;">Print</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for rx in items %}
+                <tr>
+                  <td>{{ rx.medication.name }}</td>
+                  <td class="text-muted">{{ rx.medication.generic_name.name }}</td>
+                  <td>{{ rx.medication.strength }}</td>
+                  <td>{{ rx.medication.get_route_of_administration_display }}</td>
+                  <td>{{ rx.dosage }}</td>
+                  <td>{{ rx.frequency }}</td>
+                  <td>{{ rx.duration }}</td>
+                  <td>{{ rx.prescribed_by }}</td>
+                  <td>
+                    <a class="btn btn-sm btn-outline-primary"
+                       href="{% url 'medications:prescription_printable' rx.id %}">
+                      <i class="bi bi-printer"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endwith %}
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-secondary">No prescriptions found.</div>
+  {% endif %}
 </div>
 {% endblock %}

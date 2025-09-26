@@ -181,7 +181,7 @@ def doctor_dashboard(request):
         physician=physician,
         consultation_date_date_only__gte=date.today(),
         status="scheduled"
-    ).order_by('consultation_date_date_only', 'consultation_time_block')[:3]
+    ).order_by('consultation_date_date_only', 'consultation_time_block')[:5]
 
     context = {
         'physician': physician,
@@ -434,3 +434,49 @@ class ConsultationCreateView(CreateView):
     def form_invalid(self, form):
         messages.error(self.request, "Please correct the errors below.")
         return super().form_invalid(form)
+
+
+
+def complete_consultation(request, consultation_id):
+    """
+    Marks a consultation as completed (with a confirmation screen on GET).
+    On POST, updates status to 'completed' (Enum-safe) and redirects to the calendar.
+    """
+    consultation = get_object_or_404(
+        Consultation.objects.select_related('physician'), id=consultation_id
+    )
+
+    # Helper to support either Enum or string statuses
+    def _status_value(model_cls, name_fallback: str):
+        # If you have a nested Enum like Consultation.Status.COMPLETED, prefer that
+        if hasattr(model_cls, "Status") and hasattr(model_cls.Status, "COMPLETED"):
+            return model_cls.Status.COMPLETED
+        # If using TextChoices like Consultation.Status.COMPLETED.label/value:
+        if hasattr(model_cls, "Status") and hasattr(model_cls.Status, "choices"):
+            try:
+                return model_cls.Status["COMPLETED"]
+            except Exception:
+                pass
+        # Fallback to plain string
+        return name_fallback
+
+    if request.method == "POST":
+        consultation.status = _status_value(Consultation, "completed")
+        # Optional: set a completion timestamp if your model has one
+        if hasattr(consultation, "completed_at"):
+            from django.utils import timezone
+            consultation.completed_at = timezone.now()
+
+        consultation.save()
+        messages.success(
+            request,
+            f"Consultation with {consultation.physician} on "
+            f"{consultation.consultation_date_date_only} has been marked as completed."
+        )
+        return redirect("consultations:consultation_calendar")
+
+    return render(
+        request,
+        "consultations/complete_consultation.html",
+        {"consultation": consultation}
+    )

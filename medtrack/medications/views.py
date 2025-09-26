@@ -3,39 +3,63 @@ from django.db.models import Count
 from django_filters.views import FilterView
 from .models import Medication, MedicationPrescription
 from .filters import MedicationFilter
+# medications/views.py
+from collections import OrderedDict
+from django.db.models import Q, Count
+from django.shortcuts import render
+from .models import MedicationPrescription
 
 def medication_list(request):
     """
-    View function to display a list of medications grouped by medication type with filters.
+    Show CURRENT prescriptions grouped by PDL (not by medication).
+    Optional search (?q=) across PDL name/username and medication.
     """
-    medications = Medication.objects.select_related('generic_name__medication_type').annotate(
-        prescription_count=Count('medicationprescription')
+    q = (request.GET.get("q") or "").strip()
+
+    qs = (
+        MedicationPrescription.objects
+        .select_related(
+            "pdl_profile__username",
+            "medication__generic_name",
+            "prescribed_by",
+        )
+        .order_by(
+            "pdl_profile__username__last_name",
+            "pdl_profile__username__first_name",
+            "medication__name",
+        )
     )
-    medication_filter = MedicationFilter(request.GET, queryset=medications)
 
-    grouped_medications = {}
-    for medication in medication_filter.qs:
-        medication_type = medication.generic_name.medication_type.name
-        if medication_type not in grouped_medications:
-            grouped_medications[medication_type] = []
-        grouped_medications[medication_type].append(medication)
+    if q:
+        qs = qs.filter(
+            Q(pdl_profile__username__first_name__icontains=q) |
+            Q(pdl_profile__username__last_name__icontains=q) |
+            Q(pdl_profile__username__username__icontains=q) |
+            Q(medication__name__icontains=q) |
+            Q(medication__generic_name__name__icontains=q)
+        )
 
-    return render(request, 'medications/medication_list.html', {
-        'grouped_medications': grouped_medications,
-        'filter': medication_filter,
+    # Group by PDL
+    grouped = OrderedDict()
+    for rx in qs:
+        key = rx.pdl_profile_id
+        if key not in grouped:
+            grouped[key] = {
+                "pdl": rx.pdl_profile,
+                "items": [],
+            }
+        grouped[key]["items"].append(rx)
+
+    totals = {
+        "pdl_count": len(grouped),
+        "rx_count": qs.count(),
+    }
+
+    return render(request, "medications/medication_list.html", {
+        "grouped_by_pdl": grouped,   # OrderedDict of {pdl_id: {"pdl": PDLProfile, "items": [MedicationPrescription,...]}}
+        "q": q,
+        "totals": totals,
     })
-
-def prescription_list(request, medication_id):
-    """
-    View function to display prescriptions for a specific medication.
-    """
-    medication = get_object_or_404(Medication, id=medication_id)
-    prescriptions = MedicationPrescription.objects.filter(medication=medication)
-    return render(request, 'medications/prescription_list.html', {
-        'medication': medication,
-        'prescriptions': prescriptions
-    })
-
 
 # pharmacy/views.py
 from django.contrib import messages
@@ -65,3 +89,41 @@ from .models import MedicationPrescription
 def prescription_detail(request, pk):
     obj = get_object_or_404(MedicationPrescription, pk=pk)
     return render(request, "medications/prescription_detail.html", {"obj": obj})
+
+
+# medications/views.py
+import re
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
+from .models import MedicationPrescription
+
+def _clean(s: str) -> str:
+    """Collapse whitespace and strip pipes so the barcode is parse-safe."""
+    if s is None:
+        return ""
+    return re.sub(r"\s+", " ", str(s)).replace("|", "/").strip()
+
+def prescription_printable(request, pk: int):
+    rx = get_object_or_404(MedicationPrescription.objects.select_related(
+        "pdl_profile__username", "medication__generic_name", "prescribed_by"
+    ), pk=pk)
+
+    now = timezone.localtime()
+    # Pipe-delimited, deterministic order. Keep short fields first for scanners.
+    barcode_payload = "|".join([
+        f"RX{rx.pk}",
+        f"PDL{rx.pdl_profile.pk}",
+        f"MED{rx.medication.pk}",
+        _clean(rx.medication.name),
+        _clean(rx.dosage),
+        _clean(rx.frequency),
+        _clean(rx.duration),
+        f"DR{rx.prescribed_by.pk}",
+        now.strftime("%Y%m%d"),  # issue date
+    ])
+
+    return render(request, "medications/prescription_print.html", {
+        "rx": rx,
+        "now": now,
+        "barcode_payload": barcode_payload,
+    })

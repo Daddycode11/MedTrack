@@ -20,14 +20,15 @@ class DetentionStatusAdmin(admin.ModelAdmin):
 
 @admin.register(PDLProfile)
 class PDLProfileAdmin(admin.ModelAdmin):
-    list_display = ('username__first_name', 'username__last_name', 'phone_number')
+    list_display = ('username__first_name', 'username__last_name', 'phone_number', 'profile_picture_url')
     search_fields = ('username__first_name', 'username__last_name')
     list_filter = ('username__first_name',)
     ordering = ('username__last_name',)
     fieldsets = (
         (None, {
-            'fields': ('username', 'phone_number')
+            'fields': ('username', 'phone_number', 'profile_picture_url')
         }),
+
     )
     list_per_page = 10
     list_display_links = ('username__first_name',)

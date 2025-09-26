@@ -55,6 +55,14 @@ Doctor Dashboard
                                 View Medication List
                             </a>
                         </li>
+
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-person-plus pe-2"></i>
+                            <a href="{% url 'pdl:add_pdl' %}" class="text-decoration-none">
+                                Add New PDL
+                            </a>
+                        </li>
+                        
                     </ul>
 
                     <h4 class="card-title mb-4">Upcoming Consultations</h4>
@@ -65,7 +73,7 @@ Doctor Dashboard
                                 <strong>{{ consultation.consultation_date_date_only }}</strong> - 
                                 {{ consultation.consultation_time_block_display }}<br>
                                 <span class="text-muted small">
-                                    {{ consultation.pdl_profile }} | {{ consultation.location.room_number }}
+                                    Consultation with {{ consultation.pdl_profile }} ({{consultation.status}})
                                 </span>
                             </li>
                             {% endfor %}

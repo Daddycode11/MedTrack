@@ -54,21 +54,55 @@ Add New PDL
 
                     <!-- PDL Profile -->
                     <div class="tab-pane fade" id="profile" role="tabpanel">
-                        <div class="row g-3">
-                            {% for field in pdl_profile_form %}
-                                <div class="col-md-6">
-                                    <label class="form-label">{{ field.label }}</label>
-                                    {{ field }}
-                                    {% if field.help_text %}
-                                        <div class="form-text">{{ field.help_text }}</div>
-                                    {% endif %}
-                                    {% for error in field.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
+  <div class="row g-3 align-items-start">
+    <!-- URL input -->
+    <div class="col-md-9">
+      <label class="form-label">Profile Photo URL</label>
+      {{ pdl_profile_form.profile_picture_url }}
+      {% if pdl_profile_form.profile_picture_url.help_text %}
+        <div class="form-text">{{ pdl_profile_form.profile_picture_url.help_text }}</div>
+      {% else %}
+        <div class="form-text">Paste a direct image URL (jpg, png, webp, etc.).</div>
+      {% endif %}
+      {% for error in pdl_profile_form.profile_picture_url.errors %}
+        <div class="text-danger small">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <!-- Live preview -->
+    <div class="col-md-3">
+      <label class="form-label d-flex justify-content-between align-items-center">
+        <span>Preview</span>
+      </label>
+      <div id="add-profile-photo-preview"
+           class="border rounded p-2 d-flex flex-column align-items-center justify-content-center"
+           style="height: 170px;"
+           aria-live="polite"
+           aria-atomic="true">
+        <i class="bi bi-image fs-1 text-secondary mb-2" aria-hidden="true"></i>
+        <div class="text-muted small text-center">Paste a URL to preview</div>
+      </div>
+    </div>
+  </div>
+
+  {# Render the rest of the PDL profile fields normally #}
+  <div class="row g-3 mt-1">
+    {% for field in pdl_profile_form %}
+      {% if field.name != "profile_picture_url" %}
+        <div class="col-md-6">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}
+            <div class="form-text">{{ field.help_text }}</div>
+          {% endif %}
+          {% for error in field.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
 
                     <!-- Detention Details -->
                     <div class="tab-pane fade" id="detention" role="tabpanel">
@@ -311,7 +345,66 @@ document.addEventListener("DOMContentLoaded", function () {
   updateCredentials();
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const urlInput = document.querySelector('[name="profile_picture_url"]');
+  const previewBox = document.getElementById('add-profile-photo-preview');
+  if (!urlInput || !previewBox) return;
 
+  let debounceTimer = null;
+
+  function showPlaceholder(){
+    previewBox.innerHTML = `
+      <i class="bi bi-image fs-1 text-secondary mb-2" aria-hidden="true"></i>
+      <div class="text-muted small text-center">Paste a URL to preview</div>
+    `;
+  }
+  function showError(){
+    previewBox.innerHTML = `
+      <i class="bi bi-exclamation-triangle fs-1 text-danger mb-2" aria-hidden="true"></i>
+      <div class="text-danger small text-center">Unable to retrieve from URL</div>
+    `;
+  }
+  function showImage(src){
+    previewBox.innerHTML = "";
+    const img = document.createElement("img");
+    img.src = src;
+    img.width = 140;
+    img.height = 140;
+    img.alt = "Profile photo preview";
+    img.loading = "lazy";
+    img.referrerPolicy = "no-referrer";
+    img.className = "rounded-circle object-fit-cover border shadow-sm";
+    previewBox.appendChild(img);
+  }
+  function updatePreview(value){
+    const url = (value || "").trim();
+    if (!url){ showPlaceholder(); return; }
+    const testImg = new Image();
+    testImg.referrerPolicy = "no-referrer";
+    testImg.onload = () => showImage(url);
+    testImg.onerror = showError;
+    try{
+      const u = new URL(url, window.location.origin);
+      if (!/^https?:$/i.test(u.protocol)) { showError(); return; }
+      testImg.src = u.href;
+    }catch{
+      showError();
+    }
+  }
+  function debounced(){
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => updatePreview(urlInput.value), 300);
+  }
+
+  // Initial (prefill) + live updates
+  updatePreview(urlInput.value);
+  urlInput.addEventListener("input", debounced);
+  urlInput.addEventListener("change", debounced);
+  urlInput.addEventListener("paste", debounced);
+  urlInput.addEventListener("blur", debounced);
+});
+</script>
 
 
 {% endblock %}

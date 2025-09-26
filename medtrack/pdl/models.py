@@ -32,16 +32,17 @@ class PDLProfile(models.Model):
     username = models.ForeignKey(User, on_delete=models.CASCADE)
     phone_number = models.CharField(_("Phone Number"), max_length=15, blank=True, null=True)
 
+    profile_picture_url = models.URLField(_("Profile Picture URL"), blank=True, null=True)
 
-    # middle_name = models.CharField(_("Middle Name(s)"), max_length=150, blank=True)
-    # name_suffix = models.CharField(
-    #     _("Name Suffix"),
-    #     max_length=10,
-    #     choices=NameSuffix.choices,
-    #     blank=True,
-    #     default=NameSuffix.NONE,
-    #     help_text=_("e.g., Jr., Sr., II, III; leave blank if none."),
-    # )
+    middle_name = models.CharField(_("Middle Name(s)"), max_length=150, blank=True)
+    name_suffix = models.CharField(
+        _("Name Suffix"),
+        max_length=10,
+        choices=NameSuffix.choices,
+        blank=True,
+        default=NameSuffix.NONE,
+        help_text=_("e.g., Jr., Sr., II, III; leave blank if none."),
+    )
 
      # --- Choices ---
     SEX_CHOICES = [

@@ -99,6 +99,35 @@
     text-decoration:none; color:#111; font-weight:600; border-radius:2px;
   }
   .btn:hover{background:#f0f0f0;}
+
+  /* --- Status adornments --- */
+.watermark-canceled{
+  position: fixed;                /* print-friendly across pages */
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-20deg);
+  font-weight: 800;
+  letter-spacing: 4px;
+  font-size: 88px;
+  color: #c62828;                 /* red */
+  opacity: 0.12;                  /* subtle */
+  z-index: 9999;                  /* above content, below toolbar */
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+.status-banner{
+  padding: 8px 10px;
+  border: 1.5px solid #2e7d32;
+  color: #2e7d32;
+  background: #e8f5e9;            /* light green */
+  font-weight: 700;
+  letter-spacing: .3px;
+  margin: 8px 0 12px;
+}
+@media print{
+  .watermark-canceled{opacity: 0.15;} /* a touch stronger on paper */
+}
+
 </style>
 </head>
 <body>
@@ -106,6 +135,14 @@
 <!-- On-screen toolbar (hidden on print) -->
 <div class="toolbar no-print">
   <div class="container" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+    {% if c.status == "canceled" %}
+  <!-- Big red watermark across the page -->
+  <div class="watermark-canceled">CANCELED</div>
+{% elif c.status == "completed" %}
+  <!-- Small note banner for completed consultations -->
+  <div class="status-banner">This is a completed consultation.</div>
+{% endif %}
+
     <div>
       <strong>CONSULTATION FORM — PRINT PREVIEW</strong>
       <span class="muted">| {{ c.pk }} | Generated: {{ now|date:"Y-m-d H:i" }}</span>
@@ -121,7 +158,7 @@
   <!-- Header -->
   <div class="form-box">
     <div class="section-header">
-      <span class="agency">BUREAU OF JAIL MANAGEMENT AND PENOLOGY</span>
+      <span class="agency">San Jose District Jail - San Jose Occidental Mindoro</span>
       <span class="section-sub">— Medical Consultation Record</span>
       <span class="right" style="margin-left:auto;">Form ID: HRS-CNS-01</span>
     </div>

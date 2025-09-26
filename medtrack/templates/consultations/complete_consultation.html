@@ -1,0 +1,22 @@
+
+{% extends "base.html" %}
+
+{% block title %}Complete Consultation{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1 class="h3 mb-4">Complete Consultation</h1>
+  <div class="alert alert-info">
+    Are you sure you want to mark the consultation with
+    <strong>{{ consultation.physician }}</strong> on
+    <strong>{{ consultation.consultation_date_date_only }}</strong> as <em>completed</em>?
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-check-circle"></i> Yes, Mark as Completed
+    </button>
+    <a href="{% url 'consultations:consultation_calendar' %}" class="btn btn-secondary">No, Go Back</a>
+  </form>
+</div>
+{% endblock %}

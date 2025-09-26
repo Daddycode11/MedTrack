@@ -9,4 +9,5 @@ urlpatterns = [
     path('profile/<str:username>/', views.pdl_profile, name='pdl_profile_by_id'),  # New URL
     path('add/', views.add_pdl, name='add_pdl'),  # New URL for adding PDL
     path("api/pdl/<int:pk>/latest-room/", views.pdl_detention_room_api, name="pdl_latest_room_api"),
+    path("edit/<int:pdl_id>/", views.edit_pdl, name="edit_pdl"),
 ]

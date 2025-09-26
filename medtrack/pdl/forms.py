@@ -46,7 +46,7 @@ class PDLProfileForm(forms.ModelForm):
     class Meta:
         model = PDLProfile
         fields = [
-            'phone_number',
+            'profile_picture_url',
             'sex',
             'age',
             'civil_status',
@@ -68,8 +68,15 @@ class PDLProfileForm(forms.ModelForm):
             'contact_person_relationship',
         ]
         widgets = {
-            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
             'sex': forms.Select(attrs={'class': 'form-select'}),
+            'profile_picture_url': forms.URLInput(attrs={
+                'class':'form-control',
+                'placeholder':'https://…/photo.jpg',
+                'inputmode':'url',
+                'autocomplete':'off',
+                'data-preview-target':'profilePhotoPreview',
+                'pattern': r'^https?://.+',
+            }),
             'age': forms.NumberInput(attrs={'class': 'form-control'}),
             'civil_status': forms.Select(attrs={'class': 'form-select'}),
             'educational_attainment': forms.Select(attrs={'class': 'form-select'}),
