@@ -46,6 +46,8 @@ class PDLProfileForm(forms.ModelForm):
     class Meta:
         model = PDLProfile
         fields = [
+            'middle_name',
+            'name_suffix',
             'profile_picture_url',
             'sex',
             'age',
@@ -68,6 +70,8 @@ class PDLProfileForm(forms.ModelForm):
             'contact_person_relationship',
         ]
         widgets = {
+            'middle_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'name_suffix': forms.Select(attrs={'class': 'form-select'}),
             'sex': forms.Select(attrs={'class': 'form-select'}),
             'profile_picture_url': forms.URLInput(attrs={
                 'class':'form-control',

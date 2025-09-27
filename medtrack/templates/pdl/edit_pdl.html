@@ -63,6 +63,41 @@
         <strong>PDL Profile</strong>
       </div>
       <div class="card-body">
+        {# === Add this block at the start of the PDL Profile card body === #}
+<div class="row g-3 align-items-end mb-3">
+  <div class="col-md-3">
+    <label class="form-label">First name</label>
+    <input type="text" id="ro-first-name" class="form-control" value="" readonly>
+    <div class="form-text">Read-only (mirrors User → First name)</div>
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Middle name</label>
+    {{ pdl_profile_form.middle_name }}
+    <div class="form-text">Enter middle name</div>
+    {% if pdl_profile_form.middle_name.errors %}
+      <div class="text-danger small">{{ pdl_profile_form.middle_name.errors|join:", " }}</div>
+    {% endif %}
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Last name</label>
+    <input type="text" id="ro-last-name" class="form-control" value="" readonly>
+    <div class="form-text">Read-only (mirrors User → Last name)</div>
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Suffix</label>
+    {{ pdl_profile_form.name_suffix }}
+    <div class="form-text">Select suffix if applicable.</div>
+
+    {% if pdl_profile_form.name_suffix.errors %}
+      <div class="text-danger small">{{ pdl_profile_form.name_suffix.errors|join:", " }}</div>
+    {% endif %}
+  </div>
+</div>
+{# === /Add block === #}
+
 <div class="row g-3 align-items-start">
   <!-- URL input -->
   <div class="col-md-9">
@@ -309,6 +344,116 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Initial render (in case form has an existing value)
+  updatePreview(urlInput.value);
+
+  // Live updates
+  urlInput.addEventListener("input", debouncedPreview);
+  urlInput.addEventListener("change", debouncedPreview);
+  urlInput.addEventListener("paste", debouncedPreview);
+  urlInput.addEventListener("blur", debouncedPreview);
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  /* ===== Name Mirror (read-only First/Last in PDL Profile) ===== */
+  const userFirst = document.querySelector('[name="first_name"]');
+  const userLast  = document.querySelector('[name="last_name"]');
+  const roFirst   = document.getElementById('ro-first-name');
+  const roLast    = document.getElementById('ro-last-name');
+
+  function syncNames() {
+    if (roFirst && userFirst) roFirst.value = userFirst.value || '';
+    if (roLast && userLast)   roLast.value  = userLast.value  || '';
+  }
+
+  // Initial sync (handles edit pages with prefilled values)
+  syncNames();
+
+  // Live sync on typing/changes
+  if (userFirst) {
+    userFirst.addEventListener('input', syncNames);
+    userFirst.addEventListener('change', syncNames);
+  }
+  if (userLast) {
+    userLast.addEventListener('input', syncNames);
+    userLast.addEventListener('change', syncNames);
+  }
+  /* ===== /Name Mirror ===== */
+
+
+  /* ===== Existing Photo Preview code (kept as-is) ===== */
+  // ... your existing preview code below ...
+  // Grab the URL input (works with default Django naming)
+  const urlInput = document.querySelector('[name="profile_picture_url"]');
+  const previewBox = document.getElementById('profile-photo-preview');
+
+  if (!urlInput || !previewBox) return;
+
+  let debounceTimer = null;
+
+  function showPlaceholder() {
+    previewBox.innerHTML = `
+      <i class="bi bi-image fs-1 text-secondary mb-2" aria-hidden="true"></i>
+      <div class="text-muted small text-center">Paste a URL to preview</div>
+    `;
+  }
+
+  function showError() {
+    previewBox.innerHTML = `
+      <i class="bi bi-exclamation-triangle fs-1 text-danger mb-2" aria-hidden="true"></i>
+      <div class="text-danger small text-center">Unable to retrieve from URL</div>
+    `;
+  }
+
+  function showImage(src) {
+    previewBox.innerHTML = "";
+    const wrapper = document.createElement("div");
+    wrapper.className = "d-flex flex-column align-items-center w-100";
+
+    const img = document.createElement("img");
+    img.src = src;
+    img.width = 140;
+    img.height = 140;
+    img.alt = "Profile photo preview";
+    img.loading = "lazy";
+    img.referrerPolicy = "no-referrer";
+    img.className = "rounded-circle object-fit-cover border shadow-sm";
+
+    wrapper.appendChild(img);
+    previewBox.appendChild(wrapper);
+  }
+
+  function updatePreview(value) {
+    const url = (value || "").trim();
+
+    if (!url) {
+      showPlaceholder();
+      return;
+    }
+
+    const testImg = new Image();
+    testImg.referrerPolicy = "no-referrer";
+    testImg.onload = () => showImage(url);
+    testImg.onerror = showError;
+
+    try {
+      const u = new URL(url, window.location.origin);
+      if (!/^https?:$/i.test(u.protocol)) {
+        showError();
+        return;
+      }
+      testImg.src = u.href;
+    } catch (e) {
+      showError();
+    }
+  }
+
+  function debouncedPreview() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => updatePreview(urlInput.value), 300);
+  }
+
+  // Initial render
   updatePreview(urlInput.value);
 
   // Live updates

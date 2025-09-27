@@ -31,7 +31,7 @@ class NameSuffix(models.TextChoices):
 class PDLProfile(models.Model):
     username = models.ForeignKey(User, on_delete=models.CASCADE)
     phone_number = models.CharField(_("Phone Number"), max_length=15, blank=True, null=True)
-
+    
     profile_picture_url = models.URLField(_("Profile Picture URL"), blank=True, null=True)
 
     middle_name = models.CharField(_("Middle Name(s)"), max_length=150, blank=True)

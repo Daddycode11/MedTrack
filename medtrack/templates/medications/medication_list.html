@@ -78,12 +78,26 @@
                   <td>{{ rx.frequency }}</td>
                   <td>{{ rx.duration }}</td>
                   <td>{{ rx.prescribed_by }}</td>
-                  <td>
-                    <a class="btn btn-sm btn-outline-primary"
-                       href="{% url 'medications:prescription_printable' rx.id %}">
-                      <i class="bi bi-printer"></i>
-                    </a>
-                  </td>
+                  <td class="text-nowrap">
+  <a class="btn btn-sm btn-outline-primary"
+     href="{% url 'medications:prescription_printable' rx.id %}"
+     title="Print">
+    <i class="bi bi-printer"></i>
+  </a>
+
+  <!-- Delete trigger -->
+  <button
+    type="button"
+    class="btn btn-sm btn-outline-danger ms-1 js-delete-rx"
+    data-name="{{ pdl }} — {{ rx.medication.name }}"
+    data-delete-url="{% url 'medications:prescription_delete' rx.id %}"
+    data-bs-toggle="modal"
+    data-bs-target="#deleteRxModal"
+    title="Delete">
+    <i class="bi bi-trash"></i>
+  </button>
+</td>
+
                 </tr>
                 {% endfor %}
               </tbody>
@@ -97,4 +111,51 @@
     <div class="alert alert-secondary">No prescriptions found.</div>
   {% endif %}
 </div>
+<!-- Delete Prescription Modal -->
+<div class="modal fade" id="deleteRxModal" tabindex="-1" aria-labelledby="deleteRxModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="deleteRxForm" method="post" action="#">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteRxModalLabel">Delete Prescription</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">
+            Are you sure you want to delete:
+            <strong id="deleteRxName">this prescription</strong>?
+          </p>
+          <p class="text-danger small mt-2 mb-0">
+            This action cannot be undone.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const modalEl = document.getElementById('deleteRxModal');
+    const nameEl  = document.getElementById('deleteRxName');
+    const formEl  = document.getElementById('deleteRxForm');
+
+    document.addEventListener('click', function (e) {
+      const btn = e.target.closest('.js-delete-rx');
+      if (!btn) return;
+      nameEl.textContent = btn.getAttribute('data-name') || 'this prescription';
+      formEl.setAttribute('action', btn.getAttribute('data-delete-url'));
+    });
+
+    modalEl.addEventListener('hidden.bs.modal', function () {
+      formEl.setAttribute('action', '#');
+    });
+  })();
+</script>
+
 {% endblock %}

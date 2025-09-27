@@ -127,3 +127,17 @@ def prescription_printable(request, pk: int):
         "now": now,
         "barcode_payload": barcode_payload,
     })
+
+
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect
+from django.views.decorators.http import require_POST
+from .models import MedicationPrescription  # adjust if your model name differs
+
+@require_POST
+def prescription_delete(request, pk: int):
+    rx = get_object_or_404(MedicationPrescription, pk=pk)
+    label = f"{rx.pdl} — {rx.medication.name}" if getattr(rx, "pdl", None) else str(rx)
+    rx.delete()
+    messages.success(request, f"Prescription '{label}' was deleted.")
+    return redirect("medications:medication_list")

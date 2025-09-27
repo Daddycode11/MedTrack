@@ -221,13 +221,26 @@ PDL List - Medtrack
         <td>{{ pdl.detention_start_date }}</td>
         <td>{{ pdl.detention_end_date }}</td>
         <td>{{ pdl.consultation_count }}</td>
-        <td class="text-nowrap">
-          <a href="{% url 'pdl:edit_pdl' pdl.pdl_profile.id %}"
-             class="btn btn-sm btn-outline-secondary"
-             data-bs-toggle="tooltip" title="Edit PDL">
-            <i class="bi bi-pencil-square me-1"></i>Edit
-          </a>
-        </td>
+       <td class="text-nowrap">
+  <a href="{% url 'pdl:edit_pdl' pdl.pdl_profile.id %}"
+     class="btn btn-sm btn-outline-secondary"
+     data-bs-toggle="tooltip" title="Edit PDL">
+    <i class="bi bi-pencil-square me-1"></i>Edit
+  </a>
+
+  <!-- Delete trigger (no form rendered per-row) -->
+  <button
+    type="button"
+    class="btn btn-sm btn-outline-danger ms-1 js-delete-pdl"
+    data-name="{{ pdl.pdl_profile }}"
+    data-delete-url="{% url 'pdl:delete_pdl' pdl.pdl_profile.id %}"
+    data-bs-toggle="modal"
+    data-bs-target="#deletePdlModal"
+    title="Delete PDL">
+    <i class="bi bi-trash me-1"></i>Delete
+  </button>
+</td>
+
       </tr>
       {% endfor %}
     </tbody>
@@ -253,4 +266,58 @@ PDL List - Medtrack
   </div>
 
 </div>
+
+
+<!-- Delete PDL Modal (single instance) -->
+<div class="modal fade" id="deletePdlModal" tabindex="-1" aria-labelledby="deletePdlModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="deletePdlForm" method="post" action="#">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="deletePdlModalLabel">Delete PDL</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">
+            Are you sure you want to delete
+            <strong id="deletePdlName">this record</strong>?
+          </p>
+          <p class="text-danger small mt-2 mb-0">
+            WARNING: This action cannot be undone. Related records such as consultations and prescriptions will also be deleted.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const modalEl = document.getElementById('deletePdlModal');
+    const nameEl  = document.getElementById('deletePdlName');
+    const formEl  = document.getElementById('deletePdlForm');
+
+    // Delegate: populate modal with the row's data-* on button click
+    document.addEventListener('click', function (e) {
+      const btn = e.target.closest('.js-delete-pdl');
+      if (!btn) return;
+
+      const name = btn.getAttribute('data-name') || 'this record';
+      const url  = btn.getAttribute('data-delete-url');
+      nameEl.textContent = name;
+      formEl.setAttribute('action', url);
+    });
+
+    // Optional: clear action when modal hides
+    modalEl.addEventListener('hidden.bs.modal', function () {
+      formEl.setAttribute('action', '#');
+    });
+  })();
+</script>
+
 {% endblock %}

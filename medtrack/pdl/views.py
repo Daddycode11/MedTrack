@@ -116,7 +116,11 @@ def pdl_profile(request, username):
     detention_instances = DetentionInstance.objects.filter(pdl_profile=pdl_profile)
 
     # Get consultations for the PDL
-    consultations = Consultation.objects.filter(pdl_profile=pdl_profile)
+    consultations = (
+        Consultation.objects
+        .filter(pdl_profile=pdl_profile)
+        .exclude(status="completed")
+    )
 
     # Get medication prescriptions for the PDL
     medication_prescriptions = MedicationPrescription.objects.filter(pdl_profile=pdl_profile)
@@ -262,3 +266,21 @@ def edit_pdl(request, pdl_id):
             "detention_instance_form": detention_instance_form,
         },
     )
+
+
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect
+from django.views.decorators.http import require_POST
+from .models import PDLProfile  # adjust import to your app structure
+
+@require_POST
+def delete_pdl(request, pk: int):
+    """
+    Deletes a PDLProfile by primary key.
+    This is triggered from a single modal with a dynamic action URL.
+    """
+    profile = get_object_or_404(PDLProfile, pk=pk)
+    display_name = str(profile)
+    profile.delete()
+    messages.success(request, f"PDL '{display_name}' was deleted.")
+    return redirect("pdl:pdl_list")  # update to your list view name
