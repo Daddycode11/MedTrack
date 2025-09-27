@@ -31,7 +31,7 @@ class NameSuffix(models.TextChoices):
 class PDLProfile(models.Model):
     username = models.ForeignKey(User, on_delete=models.CASCADE)
     phone_number = models.CharField(_("Phone Number"), max_length=15, blank=True, null=True)
-    
+
     profile_picture_url = models.URLField(_("Profile Picture URL"), blank=True, null=True)
 
     middle_name = models.CharField(_("Middle Name(s)"), max_length=150, blank=True)
@@ -123,8 +123,17 @@ class PDLProfile(models.Model):
 
 
     def __str__(self):
-        return f"{self.username.first_name} {self.username.last_name}"
-    
+        # build "First [Middle] Last"
+        name = " ".join(
+            p.strip() for p in [
+                self.username.first_name,
+                getattr(self, "middle_name", "") or "",
+                self.username.last_name,
+            ] if p
+        )
+        # append suffix as ", Jr." / ", III" if present
+        return f"{name}, {self.name_suffix}" if getattr(self, "name_suffix", None) else name
+
     class Meta:
         verbose_name = _("PDL Profile")
         verbose_name_plural = _("PDL Profiles")
