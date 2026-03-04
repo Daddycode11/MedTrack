@@ -334,7 +334,9 @@ def admin_create_user(request):
             username=username, first_name=first_name,
             last_name=last_name, email=email, password=password,
         )
-        UserProfile.objects.create(user=user, role=role)
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.role = role
+        profile.save()
 
         # For doctors, also create a Physician record
         if role == 'doctor':
