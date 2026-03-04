@@ -1,286 +1,471 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import PDLProfile, DetentionInstance
-from medications.models import MedicationPrescription
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
+from django.db import transaction
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from django.contrib.auth.models import User
+
+from .models import PDLProfile, DetentionInstance, HealthCondition, UserProfile, UserRole
+from medications.models import MedicationPrescription
 from consultations.models import Consultation
 from .filters import PDLFilter
-from django.contrib.auth.models import User
 from .forms import UserForm, PDLProfileForm, DetentionInstanceForm
+from .decorators import role_required
 
-# Create your views here.
 
-def index(request):
-    """
-    View function for the index page.
-    """
-    return render(request, "index.html")
-from django.core.paginator import Paginator
-from django.db.models import Count
-from django.shortcuts import render
-from .models import DetentionInstance
-from .filters import PDLFilter
+# ─────────────────────────────────────────────────────────────
+#  HELPERS
+# ─────────────────────────────────────────────────────────────
 
+# Statuses excluded from active counts and profile views
+_INACTIVE_STATUSES = Q(status__iexact='Canceled') | Q(status__iexact='Completed')
+
+
+# ─────────────────────────────────────────────────────────────
+#  PDL LIST
+# ─────────────────────────────────────────────────────────────
+
+@login_required
 def pdl_list(request):
     """
-    List PDLs with filters, consultation counts, and summary groupings.
+    Lists all PDL detention instances with active consultation counts.
+    Excludes 'Canceled' and 'Completed' consultations from the count.
+    Supports filtering via PDLFilter and paginates at 10 rows per page.
     """
     detention_instances = (
         DetentionInstance.objects
         .select_related('pdl_profile', 'detention_status', 'detention_reason')
         .annotate(
-            # per-row consultation count for display
-            consultation_count=Count('pdl_profile__consultation', distinct=True)
+            consult_count=Count(
+                'pdl_profile__consultation',
+                filter=(
+                    ~Q(pdl_profile__consultation__status__iexact='Canceled') &
+                    ~Q(pdl_profile__consultation__status__iexact='Completed')
+                ),
+                distinct=True,
+            )
         )
+        .order_by('-created_at')
     )
 
     pdl_filter = PDLFilter(request.GET, queryset=detention_instances)
     qs = pdl_filter.qs
 
-    # Overall totals
-    total_pdl_rows = qs.count()
-    total_consults = qs.aggregate(
-        s=Count('pdl_profile__consultation', distinct=True)
-    )['s'] or 0
-
-    # By sex (from PDLProfile.sex)
-    by_sex = list(
-        qs.values('pdl_profile__sex')
-          .annotate(
-              count=Count('id'),
-              consults=Count('pdl_profile__consultation', distinct=True),
-          )
-          .order_by('-count')
-    )
-    sex_label = {'M': 'Male', 'F': 'Female', None: 'Unknown', '': 'Unknown'}
-    for row in by_sex:
-        row['label'] = sex_label.get(row['pdl_profile__sex'], 'Unknown')
-
-    # By detention status (field is "status", not "name")
-    by_status = list(
-        qs.values('detention_status__id', 'detention_status__status')
-          .annotate(
-              count=Count('id'),
-              consults=Count('pdl_profile__consultation', distinct=True),
-          )
-          .order_by('-count')
-    )
-    for row in by_status:
-        row['label'] = row.get('detention_status__status') or 'Unspecified'
-
-    # By detention reason (field is "reason")
-    by_reason = list(
-        qs.values('detention_reason__id', 'detention_reason__reason')
-          .annotate(
-              count=Count('id'),
-              consults=Count('pdl_profile__consultation', distinct=True),
-          )
-          .order_by('-count')
-    )
-    for row in by_reason:
-        row['label'] = row.get('detention_reason__reason') or 'Unspecified'
-
     summary = {
-        'total_pdl_rows': total_pdl_rows,
-        'total_consults': total_consults,
-        'by_sex': by_sex,
-        'by_status': by_status,
-        'by_reason': by_reason,
+        'total_pdl_rows':   qs.count(),
+        'total_consults':   qs.filter(consult_count__gt=0).count(),
+        'male_consulted':   qs.filter(pdl_profile__sex='M', consult_count__gt=0).count(),
+        'female_consulted': qs.filter(pdl_profile__sex='F', consult_count__gt=0).count(),
     }
 
-    # Pagination
-    paginator = Paginator(qs, 30)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = Paginator(qs, 10).get_page(request.GET.get('page'))
 
-    context = {
-        'filter': pdl_filter,
+    return render(request, 'pdl/pdl_list.html', {
+        'filter':   pdl_filter,
         'page_obj': page_obj,
-        'summary': summary,
-    }
-    return render(request, 'pdl/pdl_list.html', context=context)
+        'summary':  summary,
+    })
 
+
+# ─────────────────────────────────────────────────────────────
+#  PDL PROFILE
+# ─────────────────────────────────────────────────────────────
+
+@login_required
 def pdl_profile(request, username):
     """
-    View to display the profile of a specific PDL.
+    Shows the full profile for a single PDL, including their active
+    consultations and prescriptions (Canceled and Completed are excluded).
     """
-
-    # emulate profile for username = 'johndoe'
-
     user = get_object_or_404(User, username=username)
-    pdl_profile = PDLProfile.objects.get(username=user)
-    # fetch the detention instance
-    detention_instance = DetentionInstance.objects.filter(pdl_profile=pdl_profile).first()
-  
-    # Remap to get all the detention instances for the PDL
-    detention_instances = DetentionInstance.objects.filter(pdl_profile=pdl_profile)
+    pdl  = get_object_or_404(PDLProfile, username=user)
 
-    # Get consultations for the PDL
     consultations = (
         Consultation.objects
-        .filter(pdl_profile=pdl_profile)
-        .exclude(status="completed")
+        .filter(pdl_profile=pdl)
+        .exclude(_INACTIVE_STATUSES)
+        .order_by('-consultation_date_date_only')
     )
 
-    # Get medication prescriptions for the PDL
-    medication_prescriptions = MedicationPrescription.objects.filter(pdl_profile=pdl_profile)
+    prescriptions = (
+        MedicationPrescription.objects
+        .filter(pdl_profile=pdl)
+        .exclude(_INACTIVE_STATUSES)
+        .order_by('-created_at')
+    )
 
-    context = {
-        "pdl": pdl_profile,
-        "detention_instance": detention_instance,
-        "detention_instances": detention_instances,
-        "consultations": consultations,
-        "prescriptions": medication_prescriptions,
-    }
+    detention_instance = (
+        DetentionInstance.objects
+        .filter(pdl_profile=pdl)
+        .order_by('-detention_start_date')
+        .first()
+    )
 
-    return render(request, 'pdl/pdl_profile.html', context=context)
+    return render(request, 'pdl/pdl_profile.html', {
+        'pdl':                pdl,
+        'detention_instance': detention_instance,
+        'consultations':      consultations,
+        'prescriptions':      prescriptions,
+    })
 
+
+# ─────────────────────────────────────────────────────────────
+#  ADD PDL
+# ─────────────────────────────────────────────────────────────
+
+@role_required('admin', 'staff')
+@transaction.atomic
 def add_pdl(request):
     """
-    View to add a new PDL with detention instance details.
+    Creates a new PDL by saving a User, PDLProfile, and DetentionInstance
+    atomically. Rolls back all three if any form is invalid.
     """
     if request.method == 'POST':
-        user_form = UserForm(request.POST)
-        pdl_profile_form = PDLProfileForm(request.POST)
-        detention_instance_form = DetentionInstanceForm(request.POST)
-        if user_form.is_valid() and pdl_profile_form.is_valid() and detention_instance_form.is_valid():
-            # Save the User first
-            user = user_form.save()
+        user_form      = UserForm(request.POST)
+        profile_form   = PDLProfileForm(request.POST)
+        detention_form = DetentionInstanceForm(request.POST)
 
-            # Save the PDLProfile and associate it with the User
-            pdl_profile = pdl_profile_form.save(commit=False)
-            pdl_profile.username = user
-            pdl_profile.save()
+        if user_form.is_valid() and profile_form.is_valid() and detention_form.is_valid():
+            user              = user_form.save()
+            profile           = profile_form.save(commit=False)
+            profile.username  = user
+            profile.save()
 
-            # Save the DetentionInstance and associate it with the PDLProfile
-            detention_instance = detention_instance_form.save(commit=False)
-            detention_instance.pdl_profile = pdl_profile
-            detention_instance.save()
+            detention             = detention_form.save(commit=False)
+            detention.pdl_profile = profile
+            detention.save()
 
-            return redirect('pdl:pdl_list')  # Redirect to the PDL list after saving
+            messages.success(request, "PDL added successfully.")
+            return redirect('pdl:pdl_list')
     else:
-        user_form = UserForm()
-        pdl_profile_form = PDLProfileForm()
-        detention_instance_form = DetentionInstanceForm()
+        user_form      = UserForm()
+        profile_form   = PDLProfileForm()
+        detention_form = DetentionInstanceForm()
 
     return render(request, 'pdl/add_pdl.html', {
-        'user_form': user_form,
-        'pdl_profile_form': pdl_profile_form,
-        'detention_instance_form': detention_instance_form,
+        'user_form':            user_form,
+        'pdl_profile_form':     profile_form,
+        'detention_instance_form': detention_form,
     })
-    
 
-from django.http import JsonResponse, Http404
-from django.contrib.auth.decorators import login_required
-from .models import PDLProfile, DetentionInstance
+
+# ─────────────────────────────────────────────────────────────
+#  EDIT PDL
+# ─────────────────────────────────────────────────────────────
+
+@role_required('admin', 'staff')
+@transaction.atomic
+def edit_pdl(request, pdl_id):
+    """
+    Edits an existing PDL's User, PDLProfile, and most recent DetentionInstance
+    atomically. Rolls back all three if any form is invalid.
+    """
+    profile    = get_object_or_404(PDLProfile, pk=pdl_id)
+    user       = profile.username
+    detention  = profile.detention_instances.order_by('-created_at').first()
+
+    if request.method == 'POST':
+        user_form      = UserForm(request.POST, instance=user)
+        profile_form   = PDLProfileForm(request.POST, instance=profile)
+        detention_form = DetentionInstanceForm(request.POST, instance=detention)
+
+        if user_form.is_valid() and profile_form.is_valid() and detention_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            detention_form.save()
+            messages.success(request, "PDL updated successfully.")
+            return redirect('pdl:pdl_list')
+    else:
+        user_form      = UserForm(instance=user)
+        profile_form   = PDLProfileForm(instance=profile)
+        detention_form = DetentionInstanceForm(instance=detention)
+
+    return render(request, 'pdl/edit_pdl.html', {
+        'user_form':               user_form,
+        'pdl_profile_form':        profile_form,
+        'detention_instance_form': detention_form,
+        'pdl_profile':             profile,
+    })
+
+
+# ─────────────────────────────────────────────────────────────
+#  DELETE PDL
+# ─────────────────────────────────────────────────────────────
+
+@role_required('admin', 'staff')
+@require_POST
+def delete_pdl(request, pk):
+    """
+    Deletes a PDL and their associated User account.
+    Restricted to POST requests only.
+    """
+    profile = get_object_or_404(PDLProfile, pk=pk)
+    user    = profile.username
+    profile.delete()
+    user.delete()
+    messages.success(request, "PDL deleted successfully.")
+    return redirect('pdl:pdl_list')
+
+
+# ─────────────────────────────────────────────────────────────
+#  HEALTH CONDITIONS
+# ─────────────────────────────────────────────────────────────
+
+@role_required('admin', 'staff', 'doctor')
+def health_condition_add(request, pdl_id):
+    pdl = get_object_or_404(PDLProfile, pk=pdl_id)
+    if request.method == 'POST':
+        condition    = request.POST.get('condition')
+        date_diag    = request.POST.get('date_diagnosed') or None
+        notes        = request.POST.get('notes', '')
+        is_active    = request.POST.get('is_active') == 'on'
+        HealthCondition.objects.create(
+            pdl_profile=pdl,
+            condition=condition,
+            date_diagnosed=date_diag,
+            notes=notes,
+            is_active=is_active,
+            recorded_by=request.user,
+        )
+        messages.success(request, "Health condition recorded.")
+    return redirect('pdl:pdl_profile', username=pdl.username.username)
+
+
+@role_required('admin', 'staff', 'doctor')
+def health_condition_edit(request, pk):
+    hc  = get_object_or_404(HealthCondition, pk=pk)
+    pdl = hc.pdl_profile
+    if request.method == 'POST':
+        hc.condition      = request.POST.get('condition', hc.condition)
+        hc.date_diagnosed = request.POST.get('date_diagnosed') or None
+        hc.notes          = request.POST.get('notes', '')
+        hc.is_active      = request.POST.get('is_active') == 'on'
+        hc.save()
+        messages.success(request, "Health condition updated.")
+    return redirect('pdl:pdl_profile', username=pdl.username.username)
+
+
+@role_required('admin', 'staff', 'doctor')
+@require_POST
+def health_condition_delete(request, pk):
+    hc  = get_object_or_404(HealthCondition, pk=pk)
+    username = hc.pdl_profile.username.username
+    hc.delete()
+    messages.success(request, "Health condition removed.")
+    return redirect('pdl:pdl_profile', username=username)
+
+
+# ─────────────────────────────────────────────────────────────
+#  JSON API
+# ─────────────────────────────────────────────────────────────
+
 @login_required
-def pdl_detention_room_api(request, pk: int):
+def pdl_detention_room_api(request, pk):
     """
-    Return the latest detention_room_number for the given PDLProfile,
-    and try to map it to a Location id (if you have a Location model).
+    Returns the most recent non-empty detention room number for a PDL.
+    Used by the consultation quick-add form.
     """
-    try:
-        pdl = PDLProfile.objects.get(pk=pk)
-    except PDLProfile.DoesNotExist:
-        raise Http404("PDL not found")
-
+    pdl    = get_object_or_404(PDLProfile, pk=pk)
     latest = (
         DetentionInstance.objects
         .filter(pdl_profile=pdl)
-        .exclude(detention_room_number__isnull=True)
-        .exclude(detention_room_number__exact="")
-        .order_by('-detention_start_date', '-created_at')
+        .exclude(detention_room_number='')
+        .order_by('-created_at')
         .first()
     )
+    return JsonResponse({'room_number': latest.detention_room_number if latest else None})
 
-    room_number = latest.detention_room_number if latest else None
 
+# ─────────────────────────────────────────────────────────────
+#  IT ADMIN DASHBOARD
+# ─────────────────────────────────────────────────────────────
 
-    return JsonResponse({
-        "room_number": room_number,
+@role_required('admin')
+def admin_dashboard(request):
+    """Custom IT admin panel — manage system users and their roles."""
+    from consultations.models import MedicalSpecialty
+    pdl_user_ids = PDLProfile.objects.values_list('username_id', flat=True)
+    system_users = (
+        User.objects
+        .exclude(id__in=pdl_user_ids)
+        .select_related('userprofile')
+        .order_by('last_name', 'first_name', 'username')
+    )
+
+    stats = {
+        'total':      system_users.count(),
+        'admin':      system_users.filter(userprofile__role='admin').count(),
+        'staff':      system_users.filter(userprofile__role='staff').count(),
+        'doctor':     system_users.filter(userprofile__role='doctor').count(),
+        'pharmacist': system_users.filter(userprofile__role='pharmacist').count(),
+    }
+
+    return render(request, 'pdl/admin_dashboard.html', {
+        'system_users': system_users,
+        'stats':        stats,
+        'role_choices': UserRole.choices,
+        'specialties':  MedicalSpecialty.objects.order_by('name'),
     })
 
 
-# pdl/views.py
-from django.shortcuts import get_object_or_404, render, redirect
-from django.contrib import messages
-from django.db import transaction
+@role_required('admin')
+def admin_create_user(request):
+    from consultations.models import Physician, MedicalSpecialty
+    if request.method == 'POST':
+        username   = request.POST.get('username', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name  = request.POST.get('last_name', '').strip()
+        email      = request.POST.get('email', '').strip()
+        password   = request.POST.get('password', '').strip()
+        role       = request.POST.get('role', 'staff')
 
-from django.contrib.auth.models import User
-from .models import PDLProfile, DetentionInstance
-from .forms import UserForm, PDLProfileForm, DetentionInstanceForm
+        if not username or not password:
+            messages.error(request, 'Username and password are required.')
+            return redirect('pdl:admin_dashboard')
 
+        if User.objects.filter(username=username).exists():
+            messages.error(request, f'Username "{username}" is already taken.')
+            return redirect('pdl:admin_dashboard')
 
-def edit_pdl(request, pdl_id):
-    """
-    Edit an existing PDL (User + PDLProfile + latest DetentionInstance) in one page.
-    Non-tabbed Bootstrap layout with three sections.
-    """
-    pdl_profile = get_object_or_404(
-        PDLProfile.objects.select_related("username").prefetch_related("detention_instances"),
-        pk=pdl_id
-    )
-    user = pdl_profile.username
+        user = User.objects.create_user(
+            username=username, first_name=first_name,
+            last_name=last_name, email=email, password=password,
+        )
+        UserProfile.objects.create(user=user, role=role)
 
-    # Current (latest) detention instance or None
-    detention_instance = (
-        pdl_profile.detention_instances
-        .order_by("-detention_start_date", "-created_at")
-        .first()
-    )
+        # For doctors, also create a Physician record
+        if role == 'doctor':
+            specialty_id   = request.POST.get('specialty_id')
+            phone_number   = request.POST.get('phone_number', '').strip()
+            address        = request.POST.get('address', '').strip()
+            employee_type  = request.POST.get('employee_type', 'full_time')
+            specialty = MedicalSpecialty.objects.filter(pk=specialty_id).first()
+            if specialty:
+                Physician.objects.create(
+                    username=user,
+                    specialty=specialty,
+                    phone_number=phone_number,
+                    address=address,
+                    employee_type=employee_type,
+                )
+            else:
+                messages.warning(request, f'Doctor "{username}" created but no specialty was set. Assign one via the Django admin.')
 
-    if request.method == "POST":
-        user_form = UserForm(request.POST, instance=user)
-        pdl_profile_form = PDLProfileForm(request.POST, instance=pdl_profile)
-        detention_instance_form = DetentionInstanceForm(request.POST, instance=detention_instance)
-
-        # Save everything atomically
-        if user_form.is_valid() and pdl_profile_form.is_valid() and detention_instance_form.is_valid():
-            with transaction.atomic():
-                user = user_form.save()
-
-                p = pdl_profile_form.save(commit=False)
-                p.username = user  # keep link consistent
-                p.save()
-
-                di = detention_instance_form.save(commit=False)
-                di.pdl_profile = p
-                di.save()
-
-            messages.success(request, "PDL details have been updated.")
-            return redirect("pdl:pdl_list")
-        else:
-            messages.error(request, "Please check the form for errors.")
-    else:
-        user_form = UserForm(instance=user)
-        pdl_profile_form = PDLProfileForm(instance=pdl_profile)
-        detention_instance_form = DetentionInstanceForm(instance=detention_instance)
-
-    return render(
-        request,
-        "pdl/edit_pdl.html",
-        {
-            "pdl_profile": pdl_profile,
-            "user_form": user_form,
-            "pdl_profile_form": pdl_profile_form,
-            "detention_instance_form": detention_instance_form,
-        },
-    )
+        messages.success(request, f'User "{username}" created with role "{role}".')
+    return redirect('pdl:admin_dashboard')
 
 
-from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
-from django.views.decorators.http import require_POST
-from .models import PDLProfile  # adjust import to your app structure
-
+@role_required('admin')
 @require_POST
-def delete_pdl(request, pk: int):
-    """
-    Deletes a PDLProfile by primary key.
-    This is triggered from a single modal with a dynamic action URL.
-    """
-    profile = get_object_or_404(PDLProfile, pk=pk)
-    display_name = str(profile)
-    profile.delete()
-    messages.success(request, f"PDL '{display_name}' was deleted.")
-    return redirect("pdl:pdl_list")  # update to your list view name
+def admin_edit_role(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    role = request.POST.get('role', 'staff')
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    profile.role = role
+    profile.save()
+    messages.success(request, f'Role updated for "{user.get_full_name() or user.username}".')
+    return redirect('pdl:admin_dashboard')
+
+
+@role_required('admin')
+@require_POST
+def admin_delete_user(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    if user == request.user:
+        messages.error(request, 'You cannot delete your own account.')
+        return redirect('pdl:admin_dashboard')
+    name = user.get_full_name() or user.username
+    user.delete()
+    messages.success(request, f'User "{name}" has been deleted.')
+    return redirect('pdl:admin_dashboard')
+
+
+@role_required('admin')
+def admin_user_history(request, pk):
+    """Show full activity history for a system user."""
+    from consultations.models import Physician, Consultation
+    from medications.models import MedicationPrescription, InventoryTransaction, Pharmacist
+
+    target_user = get_object_or_404(User, pk=pk)
+
+    # Physician profile (doctor role)
+    try:
+        physician = Physician.objects.get(username=target_user)
+    except Physician.DoesNotExist:
+        physician = None
+
+    # Pharmacist profile
+    try:
+        pharmacist = Pharmacist.objects.get(username=target_user)
+    except (Pharmacist.DoesNotExist, Exception):
+        pharmacist = None
+
+    # Consultations conducted (if doctor)
+    consultations = []
+    if physician:
+        consultations = (
+            Consultation.objects
+            .filter(physician=physician)
+            .select_related('pdl_profile__username', 'reason', 'location')
+            .order_by('-consultation_date_date_only')[:50]
+        )
+
+    # Prescriptions written (if doctor)
+    prescriptions_written = []
+    if physician:
+        prescriptions_written = (
+            MedicationPrescription.objects
+            .filter(prescribed_by=physician)
+            .select_related('pdl_profile__username', 'medication')
+            .order_by('-created_at')[:50]
+        )
+
+    # Prescriptions dispensed (if pharmacist)
+    prescriptions_dispensed = []
+    if pharmacist:
+        prescriptions_dispensed = (
+            MedicationPrescription.objects
+            .filter(dispensed_by=pharmacist)
+            .select_related('pdl_profile__username', 'medication')
+            .order_by('-dispensed_at')[:50]
+        )
+
+    # Inventory transactions
+    inventory_transactions = (
+        InventoryTransaction.objects
+        .filter(performed_by=target_user)
+        .select_related('inventory__medication')
+        .order_by('-timestamp')[:50]
+    )
+
+    # Health conditions recorded
+    health_conditions_recorded = (
+        HealthCondition.objects
+        .filter(recorded_by=target_user)
+        .select_related('pdl_profile__username')
+        .order_by('-created_at')[:50]
+    )
+
+    # Summary counts
+    summary = {
+        'consultations':            len(consultations),
+        'prescriptions_written':    len(prescriptions_written),
+        'prescriptions_dispensed':  len(prescriptions_dispensed),
+        'inventory_transactions':   inventory_transactions.count(),
+        'health_conditions':        health_conditions_recorded.count(),
+    }
+
+    return render(request, 'pdl/admin_user_history.html', {
+        'target_user':               target_user,
+        'physician':                 physician,
+        'pharmacist':                pharmacist,
+        'consultations':             consultations,
+        'prescriptions_written':     prescriptions_written,
+        'prescriptions_dispensed':   prescriptions_dispensed,
+        'inventory_transactions':    inventory_transactions,
+        'health_conditions_recorded': health_conditions_recorded,
+        'summary':                   summary,
+    })

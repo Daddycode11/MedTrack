@@ -3,159 +3,185 @@
 {% block title %}Current Prescriptions by PDL{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-    <h1 class="h3 m-0">Current Prescriptions by PDL</h1>
-    <div class="text-muted small">
-      {{ totals.rx_count }} prescriptions • {{ totals.pdl_count }} PDLs
-    </div>
-  </div>
+<style>
+    /* Ito ang sekreto para maging pantay-pantay ang lahat ng cards */
+    .fixed-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    /* Sineset natin ang width ng bawat column para kahit mahaba ang text, hindi gagalaw ang alignment */
+    .col-med { width: 15%; }
+    .col-gen { width: 15%; }
+    .col-dos { width: 8%; }
+    .col-freq { width: 12%; }
+    .col-dur { width: 10%; }
+    .col-qty { width: 10%; }
+    .col-stat { width: 12%; }
+    .col-by { width: 10%; }
+    .col-act { width: 8%; }
 
-  <!-- Simple search -->
-  <form method="get" class="row g-2 align-items-end mb-4">
-    <div class="col-md-6">
-      <label class="form-label small text-muted">Search (PDL or Medication)</label>
-      <input type="text" class="form-control" name="q" value="{{ q }}" placeholder="e.g., Dela Cruz, Amoxicillin">
-    </div>
-    <div class="col-md-6">
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-search me-1"></i>Filter
-        </button>
-        <a href="{% url 'medications:medication_list' %}" class="btn btn-secondary">Reset</a>
-        <a class="btn btn-success ms-auto" href="{% url 'medications:prescription_create' %}">
-          <i class="bi bi-plus-circle me-1"></i>Add Prescription
-        </a>
-      </div>
-    </div>
-  </form>
+    .table td, .table th {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
 
-  {% if grouped_by_pdl %}
-    {% for p in grouped_by_pdl.values %}
-      {% with pdl=p.pdl items=p.items %}
-      <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center bg-light">
-          <div class="d-flex align-items-center gap-3">
-            {% if pdl.profile_picture_url %}
-              <img src="{{ pdl.profile_picture_url }}" alt="{{ pdl }}" width="40" height="40"
-                   class="rounded-circle object-fit-cover border" loading="lazy" referrerpolicy="no-referrer">
-            {% else %}
-              <i class="bi bi-person-circle fs-3 text-secondary" aria-hidden="true"></i>
-              <span class="visually-hidden">No profile photo</span>
-            {% endif %}
-            <div>
-              <div class="fw-semibold">{{ pdl }}</div>
-              <div class="text-muted small">@{{ pdl.username.username }}</div>
+<div class="container mt-4 pb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <h1 class="h3 m-0 fw-bold">Current Prescriptions by PDL</h1>
+            <div class="text-muted small">
+                <span class="badge bg-primary-subtle text-primary rounded-pill">{{ totals.rx_count }} prescriptions</span>
+                <span class="badge bg-secondary-subtle text-secondary rounded-pill ms-1">{{ totals.pdl_count }} PDLs</span>
             </div>
-          </div>
-          <span class="badge text-bg-primary">{{ items|length }} rx</span>
         </div>
-
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-bordered table-hover m-0 align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th style="min-width:180px;">Medication</th>
-                  <th>Generic</th>
-                  <th>Strength</th>
-                  <th>Route</th>
-                  <th>Dosage</th>
-                  <th>Frequency</th>
-                  <th>Duration</th>
-                  <th>Prescribed By</th>
-                  <th style="width:1%;">Print</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for rx in items %}
-                <tr>
-                  <td>{{ rx.medication.name }}</td>
-                  <td class="text-muted">{{ rx.medication.generic_name.name }}</td>
-                  <td>{{ rx.medication.strength }}</td>
-                  <td>{{ rx.medication.get_route_of_administration_display }}</td>
-                  <td>{{ rx.dosage }}</td>
-                  <td>{{ rx.frequency }}</td>
-                  <td>{{ rx.duration }}</td>
-                  <td>{{ rx.prescribed_by }}</td>
-                  <td class="text-nowrap">
-  <a class="btn btn-sm btn-outline-primary"
-     href="{% url 'medications:prescription_printable' rx.id %}"
-     title="Print">
-    <i class="bi bi-printer"></i>
-  </a>
-
-  <!-- Delete trigger -->
-  <button
-    type="button"
-    class="btn btn-sm btn-outline-danger ms-1 js-delete-rx"
-    data-name="{{ pdl }} — {{ rx.medication.name }}"
-    data-delete-url="{% url 'medications:prescription_delete' rx.id %}"
-    data-bs-toggle="modal"
-    data-bs-target="#deleteRxModal"
-    title="Delete">
-    <i class="bi bi-trash"></i>
-  </button>
-</td>
-
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      {% endwith %}
-    {% endfor %}
-  {% else %}
-    <div class="alert alert-secondary">No prescriptions found.</div>
-  {% endif %}
-</div>
-<!-- Delete Prescription Modal -->
-<div class="modal fade" id="deleteRxModal" tabindex="-1" aria-labelledby="deleteRxModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="deleteRxForm" method="post" action="#">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="deleteRxModalLabel">Delete Prescription</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p class="mb-0">
-            Are you sure you want to delete:
-            <strong id="deleteRxName">this prescription</strong>?
-          </p>
-          <p class="text-danger small mt-2 mb-0">
-            This action cannot be undone.
-          </p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-danger">Delete</button>
-        </div>
-      </form>
+        <a class="btn btn-success fw-bold shadow-sm" href="{% url 'medications:prescription_create' %}">
+            <i class="bi bi-plus-circle me-1"></i>Add Prescription
+        </a>
     </div>
-  </div>
+
+    <div class="card card-body border-0 shadow-sm mb-4 bg-light">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label small fw-bold text-muted">Search (PDL or Medication)</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0 shadow-none" name="q" value="{{ q }}" placeholder="e.g., Dela Cruz, Amoxicillin">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">Filter</button>
+                    <a href="{% url 'medications:medication_list' %}" class="btn btn-outline-secondary px-4">Reset</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if grouped_by_pdl %}
+        {% for p in grouped_by_pdl.values %}
+            {% with pdl=p.pdl items=p.items %}
+            <div class="card mb-4 border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
+                <div class="card-header d-flex justify-content-between align-items-center bg-white py-3 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center border shadow-sm" style="width: 45px; height: 45px;">
+                            <i class="bi bi-person-circle fs-3 text-secondary"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark fs-5 mb-0">{{ pdl.username.get_full_name|default:pdl.username.username }}</div>
+                            <div class="text-muted small">@{{ pdl.username.username }}</div>
+                        </div>
+                    </div>
+                    <span class="badge text-bg-primary rounded-pill px-3 py-2 fw-bold shadow-sm">{{ items|length }} RX</span>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover m-0 align-middle fixed-table">
+                            <thead class="table-light">
+                                <tr class="small text-uppercase fw-bold text-muted">
+                                    <th class="ps-3 col-med">Medication</th>
+                                    <th class="col-gen">Generic</th>
+                                    <th class="col-dos">Dosage</th>
+                                    <th class="col-freq">Frequency</th>
+                                    <th class="col-dur">Duration</th>
+                                    <th class="text-center col-qty">Qty (P/D)</th>
+                                    <th class="text-center col-stat">Status</th>
+                                    <th class="col-by">Prescribed By</th>
+                                    <th class="text-center col-act">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rx in items %}
+                                <tr>
+                                    <td class="ps-3 fw-bold text-primary">{{ rx.medication.name }}</td>
+                                    <td class="text-muted small italic">{{ rx.medication.generic_name.name }}</td>
+                                    <td class="fw-semibold">{{ rx.dosage }}</td>
+                                    <td class="small">{{ rx.frequency }}</td>
+                                    <td class="small">{{ rx.duration|default:"---" }}</td>
+                                    <td class="text-center fw-bold small">
+                                        {{ rx.quantity_prescribed|default:"0" }} / {{ rx.quantity_dispensed|default:"0" }}
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        {% with s=rx.status|title %}
+                                            {% if s == 'Dispensed' %}
+                                                <span class="badge rounded-pill bg-success-subtle text-success border border-success px-2 py-1 shadow-sm small">
+                                                    <i class="bi bi-check-circle-fill"></i> Dispensed
+                                                </span>
+                                            {% elif s == 'Partially Dispensed' %}
+                                                <span class="badge rounded-pill bg-warning-subtle text-dark border border-warning px-2 py-1 shadow-sm small">
+                                                    <i class="bi bi-hourglass-split"></i> Partial
+                                                </span>
+                                            {% else %}
+                                                <span class="badge rounded-pill bg-info-subtle text-info border border-info px-2 py-1 shadow-sm small">
+                                                    <i class="bi bi-clock-history"></i> Ongoing
+                                                </span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+
+                                    <td class="small text-muted">{{ rx.prescribed_by.username }}</td>
+                                    
+                                    <td class="pe-3 text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a class="btn btn-outline-primary" href="{% url 'medications:prescription_printable' rx.id %}"><i class="bi bi-printer"></i></a>
+                                            <a class="btn btn-outline-warning" href="{% url 'medications:prescription_update' rx.id %}"><i class="bi bi-pencil-square"></i></a>
+                                            <button type="button" class="btn btn-outline-danger js-delete-rx" 
+                                                    data-name="{{ pdl.username.username }} - {{ rx.medication.name }}"
+                                                    data-delete-url="{% url 'medications:prescription_delete' rx.id %}"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteRxModal">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-light text-center py-5 shadow-sm border">
+            <i class="bi bi-clipboard2-x fs-1 text-muted"></i>
+            <p class="mt-3 text-muted fw-bold">No prescription records found.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="modal fade" id="deleteRxModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="deleteRxForm" method="post">
+                {% csrf_token %}
+                <div class="modal-header bg-danger text-white border-0">
+                    <h5 class="modal-title fw-bold">Confirm Deletion</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <p class="text-muted">Delete prescription for:</p>
+                    <strong id="deleteRxName" class="text-danger"></strong>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
-  (function () {
-    const modalEl = document.getElementById('deleteRxModal');
-    const nameEl  = document.getElementById('deleteRxName');
-    const formEl  = document.getElementById('deleteRxForm');
-
     document.addEventListener('click', function (e) {
-      const btn = e.target.closest('.js-delete-rx');
-      if (!btn) return;
-      nameEl.textContent = btn.getAttribute('data-name') || 'this prescription';
-      formEl.setAttribute('action', btn.getAttribute('data-delete-url'));
+        const btn = e.target.closest('.js-delete-rx');
+        if (btn) {
+            document.getElementById('deleteRxName').textContent = btn.getAttribute('data-name');
+            document.getElementById('deleteRxForm').setAttribute('action', btn.getAttribute('data-delete-url'));
+        }
     });
-
-    modalEl.addEventListener('hidden.bs.modal', function () {
-      formEl.setAttribute('action', '#');
-    });
-  })();
 </script>
-
 {% endblock %}

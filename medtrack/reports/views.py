@@ -2,15 +2,17 @@
 from datetime import date, timedelta
 from collections import defaultdict
 
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
 from django.db.models import DateField
-from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils.timezone import localdate
+from django.contrib.auth.decorators import login_required
 
-from consultations.models import Consultation  # adjust import to your app name
+from consultations.models import Consultation
+from medications.models import MedicationPrescription, MedicationInventory, Medication
+from pdl.models import HealthCondition, PDLProfile
 
 # --- helpers ---------------------------------------------------------------
 
@@ -103,6 +105,7 @@ def _csv_response(filename: str, rows: list, period: str):
 
 # --- main view -------------------------------------------------------------
 
+@login_required
 def report_center(request):
     """
     Standalone 'Report Center' page with a late-90s minimal look.
@@ -211,6 +214,7 @@ def _row_to_dict(c: Consultation):
     data["__str__"] = str(c)
     return data
 
+@login_required
 def report_details(request):
     """
     Details page.
@@ -288,4 +292,170 @@ def report_details(request):
         "generated": today,
         "rows": rows,
         "columns": list(rows[0].keys()) if rows else [],
+    })
+
+
+# ── Health Conditions Report ────────────────────────────────────────────────
+
+@login_required
+def health_conditions_report(request):
+    today = localdate()
+
+    condition_choices = HealthCondition.CONDITION_CHOICES
+
+    # Count active conditions per type
+    counts = (
+        HealthCondition.objects
+        .filter(is_active=True)
+        .values('condition')
+        .annotate(total=Count('id'))
+        .order_by('-total')
+    )
+    count_map = {row['condition']: row['total'] for row in counts}
+
+    # Build rows with display names
+    rows = [
+        {
+            'code':    code,
+            'label':   label,
+            'total':   count_map.get(code, 0),
+        }
+        for code, label in condition_choices
+    ]
+    rows.sort(key=lambda r: -r['total'])
+
+    # PDLs with multiple conditions
+    multi_condition_pdls = (
+        HealthCondition.objects
+        .filter(is_active=True)
+        .values('pdl_profile')
+        .annotate(cond_count=Count('condition', distinct=True))
+        .filter(cond_count__gte=2)
+        .order_by('-cond_count')
+    )
+
+    total_pdls_with_conditions = (
+        HealthCondition.objects
+        .filter(is_active=True)
+        .values('pdl_profile')
+        .distinct()
+        .count()
+    )
+
+    # CSV export
+    if request.GET.get('export') == 'csv':
+        import csv
+        resp = HttpResponse(content_type='text/csv; charset=utf-8')
+        resp['Content-Disposition'] = 'attachment; filename="health-conditions-report.csv"'
+        w = csv.writer(resp)
+        w.writerow(['Condition', 'Active Cases'])
+        for r in rows:
+            w.writerow([r['label'], r['total']])
+        return resp
+
+    return render(request, 'reports/health_conditions_report.html', {
+        'rows': rows,
+        'today': today,
+        'total_pdls_with_conditions': total_pdls_with_conditions,
+        'multi_condition_count': multi_condition_pdls.count(),
+    })
+
+
+# ── Fast-Moving Medications Report ─────────────────────────────────────────
+
+@login_required
+def fast_moving_medications(request):
+    today = localdate()
+
+    top_prescribed = (
+        MedicationPrescription.objects
+        .values('medication__id', 'medication__name', 'medication__generic_name__name')
+        .annotate(
+            prescription_count=Count('id'),
+            total_dispensed=Sum('quantity_dispensed'),
+        )
+        .order_by('-prescription_count')[:20]
+    )
+
+    # Dispensation rate per medication
+    rows = []
+    for row in top_prescribed:
+        inv = MedicationInventory.objects.filter(medication_id=row['medication__id']).first()
+        rows.append({
+            'name':               row['medication__name'],
+            'generic':            row['medication__generic_name__name'],
+            'prescription_count': row['prescription_count'],
+            'total_dispensed':    row['total_dispensed'] or 0,
+            'current_stock':      inv.quantity if inv else '—',
+            'is_low_stock':       inv.is_low_stock if inv else False,
+        })
+
+    # CSV export
+    if request.GET.get('export') == 'csv':
+        import csv
+        resp = HttpResponse(content_type='text/csv; charset=utf-8')
+        resp['Content-Disposition'] = 'attachment; filename="fast-moving-medications.csv"'
+        w = csv.writer(resp)
+        w.writerow(['Medication', 'Generic Name', 'Times Prescribed', 'Total Dispensed', 'Current Stock'])
+        for r in rows:
+            w.writerow([r['name'], r['generic'], r['prescription_count'], r['total_dispensed'], r['current_stock']])
+        return resp
+
+    return render(request, 'reports/fast_moving_medications.html', {
+        'rows': rows,
+        'today': today,
+    })
+
+
+# ── Inventory Report ────────────────────────────────────────────────────────
+
+@login_required
+def inventory_report(request):
+    today = localdate()
+
+    inventories = (
+        MedicationInventory.objects
+        .select_related('medication', 'medication__generic_name')
+        .order_by('medication__name')
+    )
+
+    low_stock  = [i for i in inventories if i.is_low_stock and not i.is_expired]
+    expired    = [i for i in inventories if i.is_expired]
+    adequate   = [i for i in inventories if not i.is_low_stock and not i.is_expired]
+
+    # Dispensation totals per medication
+    dispensed_map = dict(
+        MedicationPrescription.objects
+        .values('medication')
+        .annotate(total=Sum('quantity_dispensed'))
+        .values_list('medication', 'total')
+    )
+
+    # CSV export
+    if request.GET.get('export') == 'csv':
+        import csv
+        resp = HttpResponse(content_type='text/csv; charset=utf-8')
+        resp['Content-Disposition'] = 'attachment; filename="inventory-report.csv"'
+        w = csv.writer(resp)
+        w.writerow(['Medication', 'Generic Name', 'Stock Qty', 'Reorder Level', 'Status', 'Expiry Date', 'Location'])
+        for inv in inventories:
+            status = 'Expired' if inv.is_expired else ('Low Stock' if inv.is_low_stock else 'Adequate')
+            w.writerow([
+                inv.medication.name,
+                inv.medication.generic_name.name,
+                inv.quantity,
+                inv.reorder_level,
+                status,
+                inv.expiration_date,
+                inv.location,
+            ])
+        return resp
+
+    return render(request, 'reports/inventory_report.html', {
+        'inventories': inventories,
+        'low_stock':   low_stock,
+        'expired':     expired,
+        'adequate':    adequate,
+        'dispensed_map': dispensed_map,
+        'today':       today,
     })

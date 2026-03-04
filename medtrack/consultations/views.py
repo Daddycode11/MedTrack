@@ -1,7 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages
-from datetime import date, timedelta
+from django.contrib.auth.decorators import login_required
+from django.urls import reverse_lazy
+from pdl.decorators import role_required
+from django.views.generic import CreateView
+from django.utils import timezone
+from django.utils.dateparse import parse_date
+from datetime import date
 import datetime as dt
 import calendar
 
@@ -16,306 +22,170 @@ from .forms import ScheduleConsultationForm
 from pdl.models import PDLProfile
 
 
+# ─────────────────────────────────────────────────────────────
+#  HELPER: build calendar context from a consultations queryset
+# ─────────────────────────────────────────────────────────────
+
 def consultation_calendar(request, consultations):
     """
-    Generates a calendar view for consultations within a specified month and year.
-    Args:
-        request (HttpRequest): The HTTP request object containing optional 'year' and 'month' 
-            query parameters to specify the calendar's year and month. Defaults to the current 
-            year and month if not provided.
-        consultations (QuerySet): A queryset of consultation objects, each containing a 
-            `consultation_date_date_only` attribute representing the date of the consultation.
-    Returns:
-        dict: A context dictionary containing the following keys:
-            - 'calendar_data' (list): A list of weeks, where each week is a list of dictionaries 
-              representing days. Each day dictionary contains:
-                - 'day' (int or None): The day of the month, or None for days outside the current month.
-                - 'weekday' (int): The weekday index (0=Monday, 6=Sunday).
-                - 'consultations' (list): A list of consultations scheduled for that day.
-            - 'year' (int): The year of the calendar.
-            - 'month' (int): The month of the calendar.
-            - 'month_name' (str): The full name of the month.
-            - 'prev_month' (int): The previous month (1-12).
-            - 'prev_year' (int): The year corresponding to the previous month.
-            - 'next_month' (int): The next month (1-12).
-            - 'next_year' (int): The year corresponding to the next month.
+    Generates a calendar context dict for a given consultations queryset.
+
+    Returns a dict with:
+        calendar_data  – list of weeks; each week is a list of day dicts:
+                            { day, weekday, consultations }
+        year, month, month_name
+        prev_month, prev_year, next_month, next_year
     """
-   
-    # Prepare data for the calendar
     today = date.today()
-    year = int(request.GET.get('year', today.year))
+    year  = int(request.GET.get('year',  today.year))
     month = int(request.GET.get('month', today.month))
+
     if year < 1 or month < 1 or month > 12:
-        messages.error(request, "Invalid year or month provided. Defaulting to the current date.")
+        messages.error(request, "Invalid year or month. Defaulting to today.")
         year, month = today.year, today.month
 
-    # Create a calendar object
-    cal = calendar.Calendar()
-    month_days = cal.itermonthdays2(year, month)  # Returns (day, weekday) tuples
+    cal        = calendar.Calendar()
+    month_days = cal.itermonthdays2(year, month)   # (day, weekday) tuples
 
-    # Map consultations to their respective dates
+    # Map day-of-month → list of consultations
     consultation_map = {}
-    for consultation in consultations:
-        consultation_date = consultation.consultation_date_date_only
-        if consultation_date.year == year and consultation_date.month == month:
-            consultation_map.setdefault(consultation_date.day, []).append(consultation)
+    for c in consultations:
+        d = c.consultation_date_date_only
+        if d.year == year and d.month == month:
+            consultation_map.setdefault(d.day, []).append(c)
 
-    # Prepare the calendar data
-    calendar_data = []
+    # Build flat list then chunk into weeks
+    flat = []
     for day, weekday in month_days:
-        if day == 0:  # Skip days outside the current month
-            calendar_data.append({'day': None, 'weekday': weekday, 'consultations': []})
-        else:
-            calendar_data.append({
-                'day': day,
-                'weekday': weekday,
-                'consultations': consultation_map.get(day, [])
-            })
+        flat.append({
+            'day':           day if day else None,
+            'weekday':       weekday,
+            'consultations': consultation_map.get(day, []) if day else [],
+        })
 
-    # Group calendar_data by week
-    weeks = []
-    week = []
-    for day_data in calendar_data:
-        week.append(day_data)
-        if len(week) == 7:  # A week has 7 days
+    weeks, week = [], []
+    for cell in flat:
+        week.append(cell)
+        if len(week) == 7:
             weeks.append(week)
             week = []
-    if week:  # Add any remaining days to the last week
+    if week:
         weeks.append(week)
-    calendar_data = weeks 
 
-    # Render the template
-    context = {
-        'calendar_data': calendar_data,
-        'year': year,
-        'month': month,
-        'month_name': calendar.month_name[month],
-        'prev_month': (month - 1) if month > 1 else 12,
-        'prev_year': year if month > 1 else year - 1,
-        'next_month': (month + 1) if month < 12 else 1,
-        'next_year': year if month < 12 else year + 1
+    return {
+        'calendar_data': weeks,
+        'year':          year,
+        'month':         month,
+        'month_name':    calendar.month_name[month],
+        'prev_month':    (month - 1) if month > 1 else 12,
+        'prev_year':     year if month > 1 else year - 1,
+        'next_month':    (month + 1) if month < 12 else 1,
+        'next_year':     year if month < 12 else year + 1,
     }
 
-    return context
 
+# ─────────────────────────────────────────────────────────────
+#  CALENDAR VIEWS
+# ─────────────────────────────────────────────────────────────
 
+@login_required
 def all_consultations(request):
-    """
-    Handles the retrieval and display of all consultations.
-
-    This view fetches all consultation records from the database, 
-    prepares the calendar data for the consultations, and renders 
-    the consultation calendar template.
-
-    Args:
-        request (HttpRequest): The HTTP request object.
-
-    Returns:
-        HttpResponse: The rendered consultation calendar template 
-        with the context containing consultation data.
-    """
-
-    # Fetch all consultations
+    """Show every consultation on the calendar."""
     consultations = Consultation.objects.all()
-
-    # Get the calendar data
     context = consultation_calendar(request, consultations)
-
-    # Render the template
     return render(request, "consultations/consultation_calendar.html", context)
 
+
+@login_required
 def consultations_by_physician(request, physician_id):
-    """
-    Handles the retrieval and display of consultations for a specific physician.
-
-    Args:
-        request (HttpRequest): The HTTP request object.
-        physician_id (int): The ID of the physician whose consultations are to be retrieved.
-
-    Returns:
-        HttpResponse: A rendered HTML page displaying the consultation calendar for the specified physician.
-
-    Raises:
-        Http404: If no Physician object with the given ID is found.
-
-    This view fetches all consultations associated with the specified physician,
-    prepares the data for a consultation calendar, and renders the corresponding template.
-    """
-
-    physician = get_object_or_404(Physician, id=physician_id)
-    # Fetch consultations for the specified physician
+    """Show only consultations for a specific physician."""
+    physician     = get_object_or_404(Physician, id=physician_id)
     consultations = Consultation.objects.filter(physician=physician)
-
-    # Get the calendar data
-    context = consultation_calendar(request, consultations)
-
-    # Render the template
+    context       = consultation_calendar(request, consultations)
     return render(request, "consultations/consultation_calendar.html", context)
 
+
+# ─────────────────────────────────────────────────────────────
+#  DOCTOR DASHBOARD
+# ─────────────────────────────────────────────────────────────
+
+@login_required
 def doctor_dashboard(request):
     """
-    Displays the doctor's dashboard with relevant information.
+    Dashboard for the logged-in user.
 
-    This view function retrieves the physician with the username 'jessicaadams'
-    and fetches the next three upcoming consultations for that physician. The
-    consultations are filtered to include only those scheduled for today or later
-    and are sorted by date and time.
-
-    Args:
-        request (HttpRequest): The HTTP request object.
-
-    Returns:
-        HttpResponse: The rendered HTML template for the doctor's dashboard.
-
-    Context:
-        physician (Physician): The physician object for 'jessicaadams'.
-        upcoming_consultations (QuerySet): A queryset containing up to three
-            upcoming consultations for the physician, sorted by date and time.
+    • If the logged-in user is a Physician → show their own upcoming consultations.
+    • Otherwise (admin / staff) → show all upcoming consultations so the
+      dashboard is still useful without raising a 404.
     """
-    
-    # Emulate view by fetching 'jessicaadams' physician
-    physician = get_object_or_404(Physician, username__username='floigarcia')
-
-    # Fetch the next three upcoming consultations for the physician
-    upcoming_consultations = Consultation.objects.filter(
-        physician=physician,
-        consultation_date_date_only__gte=date.today(),
-        status="scheduled"
-    ).order_by('consultation_date_date_only', 'consultation_time_block')[:5]
+    try:
+        physician = Physician.objects.get(username=request.user)
+        upcoming_consultations = (
+            Consultation.objects
+            .filter(
+                physician=physician,
+                consultation_date_date_only__gte=date.today(),
+                status="scheduled",
+            )
+            .order_by('consultation_date_date_only', 'consultation_time_block')[:5]
+        )
+    except Physician.DoesNotExist:
+        physician = None
+        # Admin / staff fallback: all upcoming consultations
+        upcoming_consultations = (
+            Consultation.objects
+            .filter(
+                consultation_date_date_only__gte=date.today(),
+                status="scheduled",
+            )
+            .select_related('physician', 'pdl_profile', 'location')
+            .order_by('consultation_date_date_only', 'consultation_time_block')[:5]
+        )
 
     context = {
-        'physician': physician,
+        'physician':              physician,
         'upcoming_consultations': upcoming_consultations,
     }
-
-    # Render the template
     return render(request, "consultations/doctor_dashboard.html", context)
 
+
+# ─────────────────────────────────────────────────────────────
+#  SCHEDULE / CREATE
+# ─────────────────────────────────────────────────────────────
+
+@role_required('admin', 'staff', 'doctor')
 def schedule_consultation(request):
-    """
-    Handle the scheduling of a consultation.
-
-    This view processes both GET and POST requests. For a GET request, it 
-    initializes an empty `ScheduleConsultationForm` and renders the 
-    consultation scheduling page. For a POST request, it validates the 
-    submitted form data, saves the consultation if the form is valid, and 
-    redirects the user to the consultation calendar.
-
-    Args:
-        request (HttpRequest): The HTTP request object containing metadata 
-        about the request.
-
-    Returns:
-        HttpResponse: Renders the consultation scheduling page with the form 
-        for GET requests or redirects to the consultation calendar for valid 
-        POST requests.
-    """
-
+    """Simple function-based create view (legacy; prefer ConsultationCreateView)."""
     if request.method == 'POST':
         form = ScheduleConsultationForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('consultations:consultation_calendar')  # Redirect to the consultation list after saving
+            messages.success(request, "Consultation scheduled successfully.")
+            return redirect('consultations:consultation_calendar')
     else:
         form = ScheduleConsultationForm()
 
     return render(request, 'consultations/schedule_consultation.html', {'form': form})
 
-def cancel_consultation(request, consultation_id):
-    """
-    Handles the cancellation of a consultation.
-    This view retrieves a consultation by its ID and allows the user to cancel it.
-    If the request method is POST, the consultation's status is updated to 'canceled',
-    and a success message is displayed to the user. The user is then redirected to
-    the consultation calendar. If the request method is not POST, the cancellation
-    confirmation page is rendered.
-    Args:
-        request (HttpRequest): The HTTP request object.
-        consultation_id (int): The ID of the consultation to be canceled.
-    Returns:
-        HttpResponse: Renders the cancellation confirmation page if the request
-        method is not POST. Redirects to the consultation calendar if the
-        consultation is successfully canceled.
-    """
-  
-    consultation = get_object_or_404(Consultation.objects.select_related('physician'), id=consultation_id)
 
-    if request.method == 'POST':
-        # Mark the consultation as canceled
-        consultation.status = Consultation.Status.CANCELED  # Use the appropriate constant or enum for 'canceled'
-        consultation.save()
-
-        # Add a success message
-        messages.success(request, f"Consultation with {consultation.physician} on {consultation.consultation_date_date_only} has been canceled.")
-        return redirect('consultations:consultation_calendar')
-
-    return render(request, 'consultations/cancel_consultation.html', {'consultation': consultation})
-
-def reschedule_consultation(request, consultation_id):
-    """
-    Handle the rescheduling of a consultation.
-
-    This view retrieves a consultation by its ID and allows the user to reschedule it
-    by submitting a form. If the form submission is valid, the consultation is updated
-    and the user is redirected to the consultation calendar. If the request is not a POST,
-    the form is pre-filled with the current consultation details.
-
-    Args:
-        request (HttpRequest): The HTTP request object containing metadata about the request.
-        consultation_id (int): The ID of the consultation to be rescheduled. 
-            Expected to be a positive integer.
-
-    Returns:
-        HttpResponse: Renders the reschedule consultation page with the form if the request
-        is not a POST, or redirects to the consultation calendar upon successful form submission.
-
-    Raises:
-        Http404: If the consultation with the given ID does not exist.
-
-    Template:
-        consultations/reschedule_consultation.html
-
-    Context:
-        form (ScheduleConsultationForm): The form for scheduling the consultation.
-        consultation (Consultation): The consultation object being rescheduled.
-    """
-
-    consultation = get_object_or_404(Consultation, id=consultation_id)
-
-    if request.method == 'POST':
-        form = ScheduleConsultationForm(request.POST, instance=consultation)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f"Consultation with {consultation.physician} has been rescheduled.")
-            return redirect('consultations:consultation_calendar')
-    else:
-        form = ScheduleConsultationForm(instance=consultation)
-
-    return render(request, 'consultations/reschedule_consultation.html', {'form': form, 'consultation': consultation})
-
+@role_required('admin', 'staff', 'doctor')
 def create_consultation(request):
+    """JSON-driven create endpoint (called from the calendar quick-add form)."""
     if request.method == 'POST':
         try:
-            # Extract and parse form data
-            date_str = request.POST.get('date')
-            time_block = request.POST.get('time')  # This will now be the enum name
-            
-            # Convert date string to date object
+            date_str   = request.POST.get('date')
+            time_block = request.POST.get('time')
+
             consultation_date = dt.datetime.strptime(date_str, '%Y-%m-%d').date()
-            
-            # Validate the time block
+
             if not hasattr(ConsultationTimeBlock, time_block):
-                raise ValueError(f'Invalid time block selected: {time_block}')
+                raise ValueError(f"Invalid time block: {time_block}")
 
-            # Get related objects
-            pdl = get_object_or_404(PDLProfile, id=request.POST.get('pdl'))
-            location = get_object_or_404(ConsultationLocation, id=request.POST.get('location'))
-            physician = get_object_or_404(Physician, id=request.POST.get('physician'))
-            reason = get_object_or_404(ConsultationReason, id=request.POST.get('reason'))
-            is_an_emergency = request.POST.get('is_an_emergency') == 'on'
-            notes = request.POST.get('notes')
+            pdl      = get_object_or_404(PDLProfile,            id=request.POST.get('pdl'))
+            location = get_object_or_404(ConsultationLocation,  id=request.POST.get('location'))
+            physician = get_object_or_404(Physician,            id=request.POST.get('physician'))
+            reason   = get_object_or_404(ConsultationReason,    id=request.POST.get('reason'))
 
-            # Create and save the consultation
             Consultation.objects.create(
                 consultation_date_date_only=consultation_date,
                 consultation_time_block=time_block,
@@ -324,105 +194,31 @@ def create_consultation(request):
                 physician=physician,
                 reason=reason,
                 status='scheduled',
-                is_an_emergency=is_an_emergency,
-                notes=notes
+                is_an_emergency=request.POST.get('is_an_emergency') == 'on',
+                notes=request.POST.get('notes', ''),
             )
 
-            messages.success(request, 'Consultation scheduled successfully.')
+            messages.success(request, "Consultation scheduled successfully.")
             return redirect('consultations:consultation_calendar')
 
         except Exception as e:
-            messages.error(request, f'Error scheduling consultation: {str(e)}')
+            messages.error(request, f"Error scheduling consultation: {e}")
             return redirect('consultations:create_consultation')
 
     return render(request, 'consultations/create_consultation.html')
-    
-def pdl_list_api(request):
-    pdls = PDLProfile.objects.all()
-    formatted_pdls = [
-        {
-            'id': pdl.id,
-            'name': f"{pdl.username.first_name} {pdl.username.last_name}",
-            'email': pdl.username.email,
-        }
-        for pdl in pdls
-    ]
-    return JsonResponse(formatted_pdls, safe=False)
 
-
-def physician_list_api(request):
-    physicians = Physician.objects.all()
-    formatted_physicians = [
-        {
-            'id': physician.id,
-            'name': f"{physician.username.first_name} {physician.username.last_name}",
-            'email': physician.username.email,
-        }
-        for physician in physicians
-    ]
-    return JsonResponse(formatted_physicians, safe=False)
-
-def location_list_api(request):
-    locations = ConsultationLocation.objects.all()
-    formatted_locations = [
-        {
-            'id': location.id,
-            'room_number': location.room_number
-        }
-        for location in locations
-    ]
-    return JsonResponse(formatted_locations, safe=False)
-
-def consultation_reason_list_api(request):
-    reasons = ConsultationReason.objects.all()
-    formatted_reasons = [
-        {
-            'id': reason.id,
-            'reason': reason.reason,
-            'description': reason.description
-        }
-        for reason in reasons
-    ]
-    return JsonResponse(formatted_reasons, safe=False)
-
-def consultation_time_block_list_api(request):
-    time_blocks = []
-    for block in ConsultationTimeBlock:
-        # Only include office hours
-        if "08:00" <= block.value[0] <= "17:00":
-            time_blocks.append({
-                'value': block.name,  # Send the enum name instead of the time
-                'display': block.value[1]  # Send the formatted display time
-            })
-    return JsonResponse(time_blocks, safe=False)
-from django.utils import timezone
-def consultation_printable(request, pk):
-    """
-    Renders a printable, IRS/US-gov style form for a single Consultation.
-    """
-    obj = get_object_or_404(Consultation, pk=pk)
-    return render(request, "consultations/consultation_printable.html", {"c": obj, "now": timezone.localtime()})  # or timezone.now()})
-
-# apps/consultations/views.py
-from django.urls import reverse_lazy
-from django.views.generic import CreateView
-from django.contrib import messages
-from django.utils.dateparse import parse_date
-
-from .models import Consultation
-from .forms import ScheduleConsultationForm
 
 class ConsultationCreateView(CreateView):
-    model = Consultation
-    form_class = ScheduleConsultationForm
+    """Class-based create view; supports pre-filling date from ?date=YYYY-MM-DD."""
+    model         = Consultation
+    form_class    = ScheduleConsultationForm
     template_name = "consultations/consultation_form.html"
-    success_url = reverse_lazy("consultations:consultation_calendar")
+    success_url   = reverse_lazy("consultations:consultation_calendar")
 
     def get_initial(self):
         initial = super().get_initial()
-        # If coming from calendar: /consultations/new/?date=YYYY-MM-DD
         qd = self.request.GET.get("date")
-        d = parse_date(qd) if qd else None
+        d  = parse_date(qd) if qd else None
         if d:
             initial["consultation_date_date_only"] = d
         return initial
@@ -436,47 +232,154 @@ class ConsultationCreateView(CreateView):
         return super().form_invalid(form)
 
 
+# ─────────────────────────────────────────────────────────────
+#  CANCEL / RESCHEDULE / COMPLETE
+# ─────────────────────────────────────────────────────────────
 
-def complete_consultation(request, consultation_id):
-    """
-    Marks a consultation as completed (with a confirmation screen on GET).
-    On POST, updates status to 'completed' (Enum-safe) and redirects to the calendar.
-    """
+@role_required('admin', 'staff', 'doctor')
+def cancel_consultation(request, consultation_id):
+    """Confirm then cancel a consultation."""
     consultation = get_object_or_404(
         Consultation.objects.select_related('physician'), id=consultation_id
     )
 
-    # Helper to support either Enum or string statuses
-    def _status_value(model_cls, name_fallback: str):
-        # If you have a nested Enum like Consultation.Status.COMPLETED, prefer that
-        if hasattr(model_cls, "Status") and hasattr(model_cls.Status, "COMPLETED"):
-            return model_cls.Status.COMPLETED
-        # If using TextChoices like Consultation.Status.COMPLETED.label/value:
-        if hasattr(model_cls, "Status") and hasattr(model_cls.Status, "choices"):
-            try:
-                return model_cls.Status["COMPLETED"]
-            except Exception:
-                pass
-        # Fallback to plain string
-        return name_fallback
+    if request.method == 'POST':
+        consultation.status = Consultation.Status.CANCELED
+        consultation.save()
+        messages.success(
+            request,
+            f"Consultation with {consultation.physician} on "
+            f"{consultation.consultation_date_date_only} has been cancelled."
+        )
+        return redirect('consultations:consultation_calendar')
+
+    return render(request, 'consultations/cancel_consultation.html', {'consultation': consultation})
+
+
+@role_required('admin', 'staff', 'doctor')
+def reschedule_consultation(request, consultation_id):
+    """Confirm then reschedule a consultation."""
+    consultation = get_object_or_404(Consultation, id=consultation_id)
+
+    if request.method == 'POST':
+        form = ScheduleConsultationForm(request.POST, instance=consultation)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f"Consultation with {consultation.physician} has been rescheduled."
+            )
+            return redirect('consultations:consultation_calendar')
+    else:
+        form = ScheduleConsultationForm(instance=consultation)
+
+    return render(
+        request,
+        'consultations/reschedule_consultation.html',
+        {'form': form, 'consultation': consultation},
+    )
+
+
+@role_required('admin', 'staff', 'doctor')
+def complete_consultation(request, consultation_id):
+    """Confirm then mark a consultation as completed."""
+    consultation = get_object_or_404(
+        Consultation.objects.select_related('physician'), id=consultation_id
+    )
 
     if request.method == "POST":
-        consultation.status = _status_value(Consultation, "completed")
-        # Optional: set a completion timestamp if your model has one
+        # Support both Enum and plain-string status fields
+        if hasattr(Consultation, "Status") and hasattr(Consultation.Status, "COMPLETED"):
+            consultation.status = Consultation.Status.COMPLETED
+        else:
+            consultation.status = "completed"
+
         if hasattr(consultation, "completed_at"):
-            from django.utils import timezone
             consultation.completed_at = timezone.now()
 
         consultation.save()
         messages.success(
             request,
             f"Consultation with {consultation.physician} on "
-            f"{consultation.consultation_date_date_only} has been marked as completed."
+            f"{consultation.consultation_date_date_only} marked as completed."
         )
         return redirect("consultations:consultation_calendar")
 
     return render(
         request,
         "consultations/complete_consultation.html",
-        {"consultation": consultation}
+        {"consultation": consultation},
     )
+
+
+# ─────────────────────────────────────────────────────────────
+#  PRINTABLE
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+def consultation_printable(request, pk):
+    """Render a printable form for a single consultation."""
+    obj = get_object_or_404(Consultation, pk=pk)
+    return render(
+        request,
+        "consultations/consultation_printable.html",
+        {"c": obj, "now": timezone.localtime()},
+    )
+
+
+# ─────────────────────────────────────────────────────────────
+#  JSON APIs  (used by the calendar quick-add dropdowns)
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+def pdl_list_api(request):
+    data = [
+        {
+            'id':    pdl.id,
+            'name':  f"{pdl.username.first_name} {pdl.username.last_name}",
+            'email': pdl.username.email,
+        }
+        for pdl in PDLProfile.objects.all()
+    ]
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+def physician_list_api(request):
+    data = [
+        {
+            'id':    p.id,
+            'name':  f"{p.username.first_name} {p.username.last_name}",
+            'email': p.username.email,
+        }
+        for p in Physician.objects.all()
+    ]
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+def location_list_api(request):
+    data = [
+        {'id': loc.id, 'room_number': loc.room_number}
+        for loc in ConsultationLocation.objects.all()
+    ]
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+def consultation_reason_list_api(request):
+    data = [
+        {'id': r.id, 'reason': r.reason, 'description': r.description}
+        for r in ConsultationReason.objects.all()
+    ]
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+def consultation_time_block_list_api(request):
+    data = [
+        {'value': block.name, 'display': block.value[1]}
+        for block in ConsultationTimeBlock
+        if "08:00" <= block.value[0] <= "17:00"
+    ]
+    return JsonResponse(data, safe=False)

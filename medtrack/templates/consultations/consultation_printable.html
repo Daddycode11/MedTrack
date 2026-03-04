@@ -3,445 +3,199 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>CONSULTATION FORM — PRINT</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<!-- BJMP / Official look & print setup -->
+<title>MEDICAL RECORD — {{ c.pdl_profile }}</title>
 <style>
-  :root{
-    --ink:#111;
-    --grid:#000;
-    --muted:#444;
-    --pad:10px;
+  /* --- UNIVERSAL RESET & PRINT CONFIG --- */
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; margin: 0; padding: 0; }
+  
+  body { 
+    font-family: "Times New Roman", Times, serif; 
+    font-size: 10px; 
+    padding: 10px; 
+    background: #f0f0f0; 
+    color: #000; 
+    line-height: 1.2;
   }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:#fff;color:var(--ink);}
-  /* Typography: Arial per request */
-  body{
-    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-    font-size: 12px; line-height: 1.35; letter-spacing:.1px;
-  }
-
-  /* Toolbar (screen only) */
-  .toolbar{padding:10px; border-bottom:1px solid #dcdcdc; background:#f7f7f7;}
-  .no-print{display:block;}
-  .container{max-width:980px; margin:0 auto; padding:16px;}
-
-  h1,h2,h3{margin:0 0 6px 0;}
-  .title{font-weight:700; letter-spacing:.5px; font-size:16px;}
-  .subtitle{color:var(--muted); font-size:12px; margin-bottom:12px;}
-
-  /* Form Blocks */
-  .form-box{
-    border:1.5px solid var(--grid);
-    margin-bottom:14px;
-  }
-  .section-header{
-    background:#fff;
-    padding:8px var(--pad);
-    border-bottom:1.5px solid var(--grid);
-    font-weight:700;
-    letter-spacing:.6px;
-    display:flex; align-items:center; gap:8px;
-    font-variant-caps: small-caps;
-  }
-  .section-header .agency{
-    font-weight:800;
-    letter-spacing: .8px;
-  }
-  .section-sub{color:var(--muted); font-weight:600; font-variant-caps: all-small-caps;}
-
-  .section-body{padding:10px var(--pad);}
-
-  /* Grid */
-  .grid{display:grid; grid-template-columns: repeat(12, 1fr); gap:8px;}
-  .col-12{grid-column: span 12;}
-  .col-6{grid-column: span 6;}
-  .col-4{grid-column: span 4;}
-  .col-3{grid-column: span 3;}
-  .col-2{grid-column: span 2;}
-  .col-1{grid-column: span 1;}
-
-  /* Fields */
-  .field{border:1px solid var(--grid); padding:7px 8px; min-height:40px;}
-  .label{font-weight:700; font-size:10.5px; letter-spacing:.4px; margin-bottom:4px; color:#222;}
-  .value{min-height:18px; white-space:pre-wrap; font-size:12px;}
-  .rows-2 .value{min-height:36px;}
-  .muted{color:var(--muted);}
-  .hr{height:1px; background:var(--grid); opacity:0.6; margin:8px 0;}
-
-  /* Signature */
-  .sig-line{border-top:1px solid var(--grid); height:32px; margin-top:16px;}
-  .sig-label{font-size:10.5px; color:var(--muted); margin-top:4px;}
-
-  /* Simple YES/NO line */
-  .yn{font-weight:700;}
-  .yn .ans{display:inline-block; padding:0 2px;}
-
-  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
-  .three-col{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
-  .right{text-align:right;}
-
-  /* Page breaks for print */
-  .page-break{page-break-before:always; break-before:page;}
-  @media print{
-    .no-print{display:none !important;}
-    .container{max-width:none; padding:0.6in;}
-    .form-box{break-inside:avoid; page-break-inside:avoid;}
-    .page-break{page-break-before:always;}
-    a[href]:after{content:"";}
-    body{font-size:11pt; line-height:1.35;}
+  
+  .document-container {
+    background: #fff; width: 100%; max-width: 850px; margin: 0 auto;
+    padding: 0.3in; border: 1px solid #ccc; 
   }
 
-  /* Buttons (screen only) */
-  .btn{
-    padding:6px 12px; border:1px solid #111; background:#fff; cursor:pointer;
-    text-decoration:none; color:#111; font-weight:600; border-radius:2px;
+  /* Toolbar for Screen View */
+  .toolbar { 
+    max-width: 850px; margin: 0 auto 10px; background: #222; color: #fff; 
+    padding: 10px; display: flex; justify-content: space-between; border-radius: 4px; align-items: center;
   }
-  .btn:hover{background:#f0f0f0;}
+  .toolbar a { color: #fff; text-decoration: none; font-weight: bold; background: #444; padding: 6px 12px; border-radius: 3px; font-size: 12px; }
 
-  /* --- Status adornments --- */
-.watermark-canceled{
-  position: fixed;                /* print-friendly across pages */
-  top: 45%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(-20deg);
-  font-weight: 800;
-  letter-spacing: 4px;
-  font-size: 88px;
-  color: #c62828;                 /* red */
-  opacity: 0.12;                  /* subtle */
-  z-index: 9999;                  /* above content, below toolbar */
-  pointer-events: none;
-  mix-blend-mode: multiply;
-}
-.status-banner{
-  padding: 8px 10px;
-  border: 1.5px solid #2e7d32;
-  color: #2e7d32;
-  background: #e8f5e9;            /* light green */
-  font-weight: 700;
-  letter-spacing: .3px;
-  margin: 8px 0 12px;
-}
-@media print{
-  .watermark-canceled{opacity: 0.15;} /* a touch stronger on paper */
-}
+  /* Header Section */
+  .header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 10px; padding-bottom: 5px; }
+  .header p { margin: 1px; font-size: 9px; text-transform: uppercase; }
+  .header h2 { margin: 2px; font-size: 16px; }
+  
+  /* Status Header */
+  .status-header {
+    text-align: center; border: 1px solid #000; padding: 5px; margin-bottom: 10px; font-size: 11px; font-weight: bold;
+    {% if c.status == 'completed' %} background-color: #e8f5e9 !important; color: #2e7d32;
+    {% elif c.status == 'canceled' %} background-color: #ffebee !important; color: #c62828;
+    {% else %} background-color: #e3f2fd !important; color: #1565c0; {% endif %}
+  }
 
+  /* Section Title Styling */
+  .section-head { background: #333 !important; color: #fff !important; padding: 4px 10px; font-weight: bold; text-transform: uppercase; margin-top: 8px; font-size: 9px; }
+
+  /* Table Grid */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 0px; table-layout: fixed; }
+  th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; vertical-align: top; word-wrap: break-word; }
+  th { background: #f2f2f2 !important; width: 165px; font-size: 8px; text-transform: uppercase; color: #333; }
+  td { font-size: 10px; font-weight: bold; }
+
+  /* Footer Signature Area */
+  .footer { margin-top: 30px; }
+  .sig-table { width: 100%; border: none !important; }
+  .sig-table td { border: none !important; text-align: center; padding-top: 40px; width: 50%; }
+  .sig-line { border-top: 1.5px solid #000 !important; display: block; width: 80%; margin: 0 auto; padding-top: 2px; text-transform: uppercase; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .toolbar { display: none !important; }
+    .document-container { border: none; box-shadow: none; padding: 0; max-width: none; }
+    tr { page-break-inside: avoid; } 
+    .page-break { page-break-before: always; }
+  }
 </style>
 </head>
 <body>
 
-<!-- On-screen toolbar (hidden on print) -->
-<div class="toolbar no-print">
-  <div class="container" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-    {% if c.status == "canceled" %}
-  <!-- Big red watermark across the page -->
-  <div class="watermark-canceled">CANCELED</div>
-{% elif c.status == "completed" %}
-  <!-- Small note banner for completed consultations -->
-  <div class="status-banner">This is a completed consultation.</div>
-{% endif %}
+<div class="toolbar">
+  <div><a href="{% url 'consultations:consultation_calendar' %}">← BACK TO CALENDAR</a></div>
+  <a href="javascript:window.print()" style="background: #007bff;">PRINT FORM</a>
+</div>
 
-    <div>
-      <strong>CONSULTATION FORM — PRINT PREVIEW</strong>
-      <span class="muted">| {{ c.pk }} | Generated: {{ now|date:"Y-m-d H:i" }}</span>
-    </div>
-    <div style="display:flex; gap:8px;">
-      <a href="{% url 'consultations:consultation_calendar' %}" class="btn">← Back to Calendar</a>
-      <button onclick="window.print()" class="btn">Print</button>
+<div class="document-container">
+  <div class="header">
+    <h2>SAN JOSE DISTRICT JAIL</h2>
+    <p>Medical Services Unit • San Jose, Occidental Mindoro</p>
+  </div>
+
+  <div class="status-header">RECORD STATUS: {{ c.status|upper }}</div>
+
+  <div class="section-head">I. Patient & Visit Information</div>
+  <table>
+    <tr><th>Patient Full Name</th><td colspan="3">{{ c.pdl_profile }}</td></tr>
+    <tr>
+      <th>Consultation Date</th><td>{{ c.consultation_date_date_only|date:"F d, Y" }}</td>
+      <th>Time Block</th><td>{{ c.consultation_time_block }}</td>
+    </tr>
+    <tr>
+      <th>Attending Physician/Nurse</th><td>{{ c.physician }}</td>
+    </tr>
+    <tr>
+      <th>Emergency Case?</th><td>{{ c.is_an_emergency|yesno:"YES,NO" }}</td>
+      <th>Reason for Consultation</th><td>{{ c.reason }}</td>
+    </tr>
+    <tr><th>Notes</th><td colspan="3">{{ c.notes|default:"------" }}</td></tr>
+  </table>
+
+  <div class="section-head">II. Physical Examination on Arrival (Vitals & Findings)</div>
+  <table>
+    <tr>
+      <th>Temperature</th><td>{{ c.pea_temperature|default:"" }}°C</td>
+      <th>Blood Pressure</th><td>{{ c.pea_blood_pressure|default:"------" }}</td>
+      <th>Heart Rate</th><td>{{ c.pea_heart_rate|default:"------" }} bpm</td>
+    </tr>
+    <tr>
+      <th>Respiratory Rate</th><td>{{ c.pea_rr|default:"------" }}</td>
+      <th>Height / Weight</th><td>{{ c.pea_height|default:"None" }} cm / {{ c.pea_weight|default:"------" }} kg</td>
+      <th>Body Mass Index (BMI)</th><td>{{ c.pea_bmi|default:"------" }}</td>
+    </tr>
+  </table>
+
+  <table>
+    <tr>
+      <th>General Appearance</th><td>{{ c.pea_general_appearance|yesno:"YES,NO" }}</td>
+      <th>Head, Eyes, Ears, Nose, Throat</th><td>{{ c.pea_head_eyes_ears_nose_throat|yesno:"YES,NO" }}</td>
+      <th>Neck Condition</th><td>{{ c.pea_neck|yesno:"YES,NO" }}</td>
+    </tr>
+    <tr>
+      <th>Chest and Lungs</th><td>{{ c.pea_chest_lungs|yesno:"YES,NO" }}</td>
+      <th>Cardiovascular (Heart)</th><td>{{ c.pea_heart|yesno:"YES,NO" }}</td>
+      <th>Abdomen Condition</th><td>{{ c.pea_abdomen|yesno:"YES,NO" }}</td>
+    </tr>
+    <tr>
+      <th>Genito-Urinary System</th><td>{{ c.pea_genito_urinary|yesno:"YES,NO" }}</td>
+      <th>Musculoskeletal System</th><td>{{ c.pea_musculoskeletal|yesno:"YES,NOl" }}</td>
+      <th>Physical Extremities</th><td>{{ c.pea_extremities|yesno:"YES,NO" }}</td>
+    </tr>
+    <tr><th>Other Clinical Findings</th><td colspan="5">{{ c.pea_other_findings|default:"None" }}</td></tr>
+  </table>
+
+  <div class="section-head">III. Past Medical History (Complete PMH)</div>
+  <table>
+    <tr>
+      <th>Blood Type</th><td>{{ c.pmh_blood_type|default:"None" }}</td>
+      <th>Family Medical History</th><td>{{ c.get_pmh_family_history_display|default:"None" }}</td>
+    </tr>
+    <tr>
+      <th>Smoking Status</th><td>{{ c.get_pmh_smoking_display|default:"None" }}</td>
+      <th>Alcohol Drinker</th><td>{{ c.pmh_alcohol_drinker|yesno:"YES,NO" }}</td>
+    </tr>
+    <tr>
+      <th>Psychiatric History</th><td>{{ c.pmh_psychiatric_history|yesno:"YES,NO" }}</td>
+      <th>Psychiatric Facility History</th><td>{{ c.pmh_psychiatric_facility|yesno:"YES,NO" }}</td>
+    </tr>
+    <tr>
+      <th>Illicit Drug History</th><td>{{ c.pmh_illicit_drugs|yesno:"YES,NO" }}</td>
+      <th>Poly-Drug Use History</th><td>{{ c.pmh_poly_drug_use|yesno:"YES,NO" }}</td>
+    </tr>
+    <tr>
+      <th>Psychiatric History (When)</th><td>{{ c.pmh_psychiatric_when|default:"N/A" }}</td>
+      <th>Physical Limitations</th><td>{{ c.pmh_limitations|default:"N/A" }}</td>
+    </tr>
+  </table>
+
+  <table>
+    <tr><th>Pediatric Medical History</th><td colspan="3">{{ c.pmh_pediatric_history|default:"N/A" }}</td></tr>
+    <tr><th>Major Adult Illnesses</th><td colspan="3">{{ c.pmh_major_adult_illnesses|default:"N/A" }}</td></tr>
+    <tr><th>Major Surgical History</th><td colspan="3">{{ c.pmh_major_surgeries|default:"N/A" }}</td></tr>
+    <tr><th>Serious Physical Injuries</th><td colspan="3">{{ c.pmh_serious_injuries|default:"N/A" }}</td></tr>
+    <tr><th>Medication History</th><td colspan="3">{{ c.pmh_medication_history|default:"N/A" }}</td></tr>
+    <tr><th>Transfusions & Reactions</th><td colspan="3">{{ c.pmh_transfusions_reactions|default:"N/A" }}</td></tr>
+    <tr><th>Mental & Emotional Issues</th><td colspan="3">{{ c.pmh_mental_emotional|default:"N/A" }}</td></tr>
+    <tr><th>Allergies (Drug/Food/Others)</th><td colspan="3">{{ c.pmh_allergies|default:"None" }}</td></tr>
+    <tr>
+      <th>ARV Treatment Details</th><td>{{ c.pmh_arv_details|default:"N/A" }}</td>
+      <th>Vaccination Records</th><td>{{ c.pmh_vaccines|default:"N/A" }}</td>
+    </tr>
+  </table>
+
+  <div class="section-head">IV. Tuberculosis Screening & Final Assessment</div>
+  <table>
+    <tr><th>Tuberculosis Screening Remarks</th><td colspan="3">{{ c.get_tb_remarks_display }}</td></tr>
+    <tr><th>Final Clinical Conclusion</th><td colspan="3">{{ c.get_fr_conclusion_display }}</td></tr>
+    <tr><th>Primary Medical Recommendation</th><td colspan="3">{{ c.get_fr_recommendation_display }}</td></tr>
+    <tr><th>Other Clinical Impressions</th><td colspan="3">{{ c.fr_other_impressions|default:"None" }}</td></tr>
+  </table>
+
+  <div class="footer">
+    <table class="sig-table">
+      <tr>
+        <td>
+          <span class="sig-line">{{ c.physician }}</span>
+          
+        </td>
+        <td>
+          <span class="sig-line"></span>
+          <strong>Patient Signature / Thumbmark</strong>
+        </td>
+      </tr>
+    
+    <div style="text-align: center; margin-top: 20px; font-size: 8px; color: #666;">
+      San Jose District Jail Health Information System | Generated: {{ now|date:"Y-m-d H:i" }}
     </div>
   </div>
 </div>
-
-<div class="container">
-  <!-- Header -->
-  <div class="form-box">
-    <div class="section-header">
-      <span class="agency">San Jose District Jail - San Jose Occidental Mindoro</span>
-      <span class="section-sub">— Medical Consultation Record</span>
-      <span class="right" style="margin-left:auto;">Form ID: HRS-CNS-01</span>
-    </div>
-    <div class="section-body">
-      <div class="grid">
-        <div class="field col-6">
-          <div class="label">PDL / PROFILE</div>
-          <div class="value">{{ c.pdl_profile }}</div>
-        </div>
-        <div class="field col-3">
-          <div class="label">DATE</div>
-          <div class="value">{{ c.consultation_date_date_only|date:"Y-m-d" }}</div>
-        </div>
-        <div class="field col-3">
-          <div class="label">TIME BLOCK</div>
-          <div class="value">{{ c.consultation_time_block }}</div>
-        </div>
-
-        <div class="field col-4">
-          <div class="label">PHYSICIAN</div>
-          <div class="value">{{ c.physician }}</div>
-        </div>
-        <div class="field col-4">
-          <div class="label">LOCATION</div>
-          <div class="value">{{ c.location }}</div>
-        </div>
-        <div class="field col-4">
-          <div class="label">REASON</div>
-          <div class="value">{{ c.reason }}</div>
-        </div>
-
-        <div class="field col-12">
-          <div class="label">NOTES</div>
-          <div class="value rows-2">{{ c.notes }}</div>
-        </div>
-
-        <div class="field col-3">
-          <div class="label">EMERGENCY CASE</div>
-          <div class="value yn">
-            <span class="ans">
-              {% if c.is_an_emergency %}YES{% else %}NO{% endif %}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Physical Exam on Arrival -->
-  <div class="form-box">
-    <div class="section-header">Physical Examination on Arrival (PEA)</div>
-    <div class="section-body">
-      <div class="grid">
-        <div class="field col-2"><div class="label">TEMP (°C)</div><div class="value">{{ c.pea_temperature }}</div></div>
-        <div class="field col-3"><div class="label">BLOOD PRESSURE (mmHg)</div><div class="value">{{ c.pea_blood_pressure }}</div></div>
-        <div class="field col-2"><div class="label">HEART RATE (bpm)</div><div class="value">{{ c.pea_heart_rate }}</div></div>
-        <div class="field col-2"><div class="label">RESP RATE</div><div class="value">{{ c.pea_rr }}</div></div>
-        <div class="field col-1"><div class="label">HT (cm)</div><div class="value">{{ c.pea_height }}</div></div>
-        <div class="field col-1"><div class="label">WT (kg)</div><div class="value">{{ c.pea_weight }}</div></div>
-        <div class="field col-1"><div class="label">BMI</div><div class="value">{{ c.pea_bmi }}</div></div>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="three-col">
-        <div class="field">
-          <div class="label">GENERAL APPEARANCE</div>
-          <div class="value yn">{% if c.pea_general_appearance %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field">
-          <div class="label">HEENT</div>
-          <div class="value yn">{% if c.pea_head_eyes_ears_nose_throat %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field">
-          <div class="label">NECK</div>
-          <div class="value yn">{% if c.pea_neck %}YES{% else %}NO{% endif %}</div>
-        </div>
-      </div>
-
-      <div class="three-col" style="margin-top:8px;">
-        <div class="field">
-          <div class="label">CHEST / LUNGS</div>
-          <div class="value yn">{% if c.pea_chest_lungs %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field">
-          <div class="label">HEART</div>
-          <div class="value yn">{% if c.pea_heart %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field">
-          <div class="label">ABDOMEN</div>
-          <div class="value yn">{% if c.pea_abdomen %}YES{% else %}NO{% endif %}</div>
-        </div>
-      </div>
-
-      <div class="three-col" style="margin-top:8px;">
-        <div class="field">
-          <div class="label">GENITO-URINARY TRACT</div>
-          <div class="value yn">{% if c.pea_genito_urinary %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field">
-          <div class="label">MUSCULOSKELETAL</div>
-          <div class="value yn">{% if c.pea_musculoskeletal %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field">
-          <div class="label">EXTREMITIES</div>
-          <div class="value yn">{% if c.pea_extremities %}YES{% else %}NO{% endif %}</div>
-        </div>
-      </div>
-
-      <div class="field" style="margin-top:8px;">
-        <div class="label">OTHER SIGNIFICANT FINDINGS</div>
-        <div class="value rows-2">{{ c.pea_other_findings }}</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Past Medical History -->
-  <div class="form-box">
-    <div class="section-header">Past Medical History (PMH)</div>
-    <div class="section-body">
-      <div class="grid">
-        <div class="field col-3"><div class="label">BLOOD TYPE</div><div class="value">{{ c.pmh_blood_type }}</div></div>
-        <div class="field col-3">
-          <div class="label">FAMILY HISTORY</div>
-          <div class="value">
-            {% if c.pmh_family_history == "HTN" %}Hypertension
-            {% elif c.pmh_family_history == "STROKE" %}Stroke
-            {% elif c.pmh_family_history == "MI" %}Heart attack
-            {% elif c.pmh_family_history == "DM" %}Diabetes
-            {% elif c.pmh_family_history == "ASTHMA" %}Asthma
-            {% elif c.pmh_family_history == "CKD" %}Kidney disease
-            {% elif c.pmh_family_history == "CA" %}Cancer
-            {% endif %}
-          </div>
-        </div>
-        <div class="field col-3">
-          <div class="label">PSYCH HISTORY</div>
-          <div class="value yn">{% if c.pmh_psychiatric_history %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field col-3">
-          <div class="label">PSYCH FACILITY CONFINEMENT</div>
-          <div class="value yn">{% if c.pmh_psychiatric_facility %}YES{% else %}NO{% endif %}</div>
-        </div>
-
-        <div class="field col-6"><div class="label">IF PSYCH HX, WHEN</div><div class="value">{{ c.pmh_psychiatric_when }}</div></div>
-        <div class="field col-6">
-          <div class="label">SMOKING</div>
-          <div class="value">
-            {% if c.pmh_smoking == "NEVER" %}Never smoked
-            {% elif c.pmh_smoking == "CURRENT" %}Current smoker
-            {% elif c.pmh_smoking == "PASSIVE" %}Passive smoker
-            {% elif c.pmh_smoking == "STOPPED" %}Stopped &gt; 1 year
-            {% endif %}
-          </div>
-        </div>
-
-        <div class="field col-3">
-          <div class="label">ALCOHOL DRINKER</div>
-          <div class="value yn">{% if c.pmh_alcohol_drinker %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field col-3">
-          <div class="label">ILLICIT DRUGS</div>
-          <div class="value yn">{% if c.pmh_illicit_drugs %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field col-3">
-          <div class="label">POLY-DRUG USE</div>
-          <div class="value yn">{% if c.pmh_poly_drug_use %}YES{% else %}NO{% endif %}</div>
-        </div>
-
-        <div class="field col-12"><div class="label">PEDIATRIC HISTORY</div><div class="value rows-2">{{ c.pmh_pediatric_history }}</div></div>
-        <div class="field col-12"><div class="label">MAJOR ADULT ILLNESSES</div><div class="value rows-2">{{ c.pmh_major_adult_illnesses }}</div></div>
-        <div class="field col-12"><div class="label">MAJOR SURGERIES</div><div class="value rows-2">{{ c.pmh_major_surgeries }}</div></div>
-        <div class="field col-12"><div class="label">SERIOUS PHYSICAL INJURIES</div><div class="value rows-2">{{ c.pmh_serious_injuries }}</div></div>
-        <div class="field col-12"><div class="label">LIMITATIONS (ROM / ACTIVITIES)</div><div class="value rows-2">{{ c.pmh_limitations }}</div></div>
-        <div class="field col-12"><div class="label">MEDICATION HISTORY</div><div class="value rows-2">{{ c.pmh_medication_history }}</div></div>
-        <div class="field col-12"><div class="label">TRANSFUSIONS / BT REACTIONS</div><div class="value rows-2">{{ c.pmh_transfusions_reactions }}</div></div>
-        <div class="field col-12"><div class="label">MENTAL / EMOTIONAL PROBLEMS</div><div class="value rows-2">{{ c.pmh_mental_emotional }}</div></div>
-        <div class="field col-12"><div class="label">ALLERGIES</div><div class="value rows-2">{{ c.pmh_allergies }}</div></div>
-        <div class="field col-12"><div class="label">ARV TREATMENT DETAILS</div><div class="value rows-2">{{ c.pmh_arv_details }}</div></div>
-        <div class="field col-12"><div class="label">VACCINES</div><div class="value rows-2">{{ c.pmh_vaccines }}</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TB Entry Screening -->
-  <div class="form-box">
-    <div class="section-header">TB Entry Screening Checklist</div>
-    <div class="section-body">
-      <div class="two-col">
-        <div class="field">
-          <div class="label">UNEXPLAINED COUGH</div>
-          <div class="value yn">{% if c.tb_unexplained_cough %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field">
-          <div class="label">BMI &lt; 18.5</div>
-          <div class="value yn">{% if c.tb_bmi_less_18_5 %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field">
-          <div class="label">BLOOD-STREAKED SPUTUM</div>
-          <div class="value yn">{% if c.tb_blood_streaked_sputum %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field">
-          <div class="label">CXR SUGGESTIVE OF TB</div>
-          <div class="value yn">{% if c.tb_cxr_suggestive %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field">
-          <div class="label">PREVIOUS TB TREATMENT</div>
-          <div class="value yn">{% if c.tb_previous_treatment %}YES{% else %}NO{% endif %}</div>
-        </div>
-        <div class="field">
-          <div class="label">TB EXPOSURE</div>
-          <div class="value yn">{% if c.tb_exposure %}YES{% else %}NO{% endif %}</div>
-        </div>
-      </div>
-
-      <div class="grid" style="margin-top:8px;">
-        <div class="field col-6">
-          <div class="label">TB REMARKS</div>
-          <div class="value">
-            {% if c.tb_remarks == "PRESUMPTIVE_TB" %}Presumptive TB
-            {% elif c.tb_remarks == "PRESUMPTIVE_DR_TB" %}Presumptive DR-TB
-            {% elif c.tb_remarks == "NOT_TB" %}Not TB
-            {% elif c.tb_remarks == "ONGOING_TB" %}Ongoing TB
-            {% elif c.tb_remarks == "OTHER_FU" %}Other follow-up
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Final Remarks -->
-  <div class="form-box">
-    <div class="section-header">Final Remarks</div>
-    <div class="section-body">
-      <div class="grid">
-        <div class="field col-6">
-          <div class="label">FINAL CONCLUSION</div>
-          <div class="value">
-            {% if c.fr_conclusion == "HEALTHY" %}Practically healthy
-            {% elif c.fr_conclusion == "SBIRT" %}SBIRT
-            {% elif c.fr_conclusion == "PHILPEN" %}PhilPEN
-            {% elif c.fr_conclusion == "NEURO_PSYCH" %}Neuro-psychiatric evaluation
-            {% elif c.fr_conclusion == "ILL_TREATMENT" %}Further documentation of allegations of ill-treatment
-            {% endif %}
-          </div>
-        </div>
-        <div class="field col-6">
-          <div class="label">RECOMMENDATION</div>
-          <div class="value">
-            {% if c.fr_recommendation == "DORM" %}To be accommodated in general dormitory
-            {% elif c.fr_recommendation == "ISOLATED" %}To be isolated
-            {% elif c.fr_recommendation == "HOSPITAL" %}To be hospitalized
-            {% endif %}
-          </div>
-        </div>
-        <div class="field col-12">
-          <div class="label">OTHER IMPRESSIONS</div>
-          <div class="value rows-2">{{ c.fr_other_impressions }}</div>
-        </div>
-      </div>
-
-      <!-- Signatures -->
-      <div class="grid" style="margin-top:12px;">
-        <div class="col-6">
-          <div class="sig-line"></div>
-          <div class="sig-label">PHYSICIAN SIGNATURE / LICENSE NO. / DATE</div>
-        </div>
-        <div class="col-6">
-          <div class="sig-line"></div>
-          <div class="sig-label">RECEIVED BY / DATE</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Page footer -->
-  <div class="muted" style="text-align:right; font-size:10.5px;">
-    Document generated for record: {{ c.pk }} • {{ now|date:"Y-m-d H:i" }}
-  </div>
-
-  <div class="page-break"></div>
-</div>
-
+</table>
 </body>
 </html>

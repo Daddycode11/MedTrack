@@ -7,6 +7,7 @@ from .models import (
     Medication,
     MedicationInventory,
     MedicationPrescription,
+    InventoryTransaction
 )
 
 # Registering all models in the admin site
@@ -33,12 +34,26 @@ class MedicationAdmin(admin.ModelAdmin):
 
 @admin.register(MedicationInventory)
 class MedicationInventoryAdmin(admin.ModelAdmin):
-    list_display = ('medication', 'quantity', 'expiration_date', 'location')
-    search_fields = ('medication__name', 'location')
-    list_filter = ('expiration_date',)
+    list_display = ['medication', 'quantity', 'reorder_level', 'is_low_stock', 'expiration_date', 'location', 'last_updated']
+    list_filter = ['location', 'expiration_date']
+    search_fields = ['medication__name', 'medication__generic_name__name']
+    readonly_fields = ['last_updated']
+    
+    def is_low_stock(self, obj):
+        return obj.is_low_stock
+    is_low_stock.boolean = True
+    is_low_stock.short_description = 'Low Stock'
+
+@admin.register(InventoryTransaction)
+class InventoryTransactionAdmin(admin.ModelAdmin):
+    list_display = ['inventory', 'transaction_type', 'quantity_change', 'performed_by', 'timestamp']
+    list_filter = ['transaction_type', 'timestamp']
+    search_fields = ['inventory__medication__name']
+    readonly_fields = ['timestamp']
 
 @admin.register(MedicationPrescription)
 class MedicationPrescriptionAdmin(admin.ModelAdmin):
-    list_display = ('pdl_profile', 'medication', 'dosage', 'frequency', 'duration', 'prescribed_by')
-    search_fields = ('pdl_profile__username__username', 'medication__name', 'prescribed_by__username__username')
-    list_filter = ('prescribed_by',)
+    list_display = ['pdl_profile', 'medication', 'quantity_prescribed', 'quantity_dispensed', 'status', 'prescribed_by', 'created_at']
+    list_filter = ['status', 'created_at']
+    search_fields = ['pdl_profile__username__last_name', 'medication__name']
+    readonly_fields = ['created_at']

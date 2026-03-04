@@ -1,3 +1,4 @@
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
@@ -151,6 +152,56 @@ class DetentionReason(models.Model):
         verbose_name_plural = _("Detention Reasons")
 
 
+class UserRole(models.TextChoices):
+    ADMIN       = 'admin',       'Admin'
+    STAFF       = 'staff',       'Staff'
+    DOCTOR      = 'doctor',      'Doctor / Nurse'
+    PHARMACIST  = 'pharmacist',  'Pharmacist'
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile')
+    role = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.STAFF)
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} ({self.get_role_display()})"
+
+    class Meta:
+        verbose_name = "User Profile"
+        verbose_name_plural = "User Profiles"
+
+
+class HealthCondition(models.Model):
+    CONDITION_CHOICES = [
+        ('HTN',    'Hypertension'),
+        ('DM',     'Diabetes Mellitus'),
+        ('HEART',  'Heart Disease'),
+        ('ASTHMA', 'Asthma / COPD'),
+        ('TB',     'Tuberculosis'),
+        ('MENTAL', 'Mental Health Condition'),
+        ('RENAL',  'Kidney Disease'),
+        ('CANCER', 'Cancer'),
+        ('OTHER',  'Other'),
+    ]
+
+    pdl_profile   = models.ForeignKey(PDLProfile, on_delete=models.CASCADE, related_name='health_conditions')
+    condition     = models.CharField(max_length=10, choices=CONDITION_CHOICES)
+    date_diagnosed = models.DateField(blank=True, null=True)
+    notes         = models.TextField(blank=True)
+    is_active     = models.BooleanField(default=True)
+    recorded_by   = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at    = models.DateTimeField(auto_now_add=True)
+    updated_at    = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.pdl_profile} — {self.get_condition_display()}"
+
+    class Meta:
+        verbose_name = "Health Condition"
+        verbose_name_plural = "Health Conditions"
+        ordering = ['-created_at']
+
+
 class DetentionInstance(models.Model):
     pdl_profile = models.ForeignKey(
         PDLProfile, 
@@ -158,7 +209,7 @@ class DetentionInstance(models.Model):
         related_name='detention_instances',
         verbose_name=_("PDL Profile")
     )
-    detention_room_number = models.CharField(_("Detention Room Number"), blank=True, null=True)
+    detention_room_number = models.CharField(_("Detention Room Number"), max_length=50)
     detention_term_length = models.IntegerField(_("Detention Term Length"), default=0, blank=True, null=True)
     detention_status = models.ForeignKey(
         DetentionStatus, 
@@ -188,4 +239,3 @@ class DetentionInstance(models.Model):
         verbose_name_plural = _("Detention Instances")
         ordering = ['-detention_start_date']
 
-        

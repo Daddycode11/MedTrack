@@ -1,0 +1,204 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ medication.name }} - Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'medications:inventory_list' %}">Inventory</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ medication.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Medication Details Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                <i class="bi bi-capsule"></i> {{ medication.name }}
+            </h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="mb-3">Medication Information</h5>
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="40%">Brand Name:</th>
+                            <td><strong>{{ medication.name }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Generic Name:</th>
+                            <td>{{ medication.generic_name.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Medication Type:</th>
+                            <td>
+                                <span class="badge bg-info">
+                                    {{ medication.generic_name.medication_type.name }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Dosage Form:</th>
+                            <td>{{ medication.get_dosage_form_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Strength:</th>
+                            <td>{{ medication.strength }}</td>
+                        </tr>
+                        <tr>
+                            <th>Route of Administration:</th>
+                            <td>{{ medication.get_route_of_administration_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Manufacturer:</th>
+                            <td>{{ medication.manufacturer }}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="col-md-6">
+                    <h5 class="mb-3">Inventory Status</h5>
+                    {% if inventory %}
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">Current Stock:</th>
+                                <td>
+                                    <span class="fs-4 fw-bold {% if inventory.is_low_stock %}text-danger{% elif inventory.quantity > inventory.reorder_level|add:inventory.reorder_level %}text-success{% else %}text-warning{% endif %}">
+                                        {{ inventory.quantity }} units
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Reorder Level:</th>
+                                <td>{{ inventory.reorder_level }} units</td>
+                            </tr>
+                            <tr>
+                                <th>Storage Location:</th>
+                                <td>{{ inventory.location }}</td>
+                            </tr>
+                            <tr>
+                                <th>Expiration Date:</th>
+                                <td>
+                                    <span class="{% if inventory.is_expired %}text-danger fw-bold{% endif %}">
+                                        {{ inventory.expiration_date|date:"F d, Y" }}
+                                        {% if inventory.is_expired %}
+                                            <span class="badge bg-danger ms-2">EXPIRED</span>
+                                        {% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Last Updated:</th>
+                                <td>{{ inventory.last_updated|date:"M d, Y h:i A" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Status:</th>
+                                <td>
+                                    {% if inventory.is_expired %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-exclamation-triangle"></i> Expired
+                                        </span>
+                                    {% elif inventory.is_low_stock %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-exclamation-circle"></i> Low Stock
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> In Stock
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> No inventory data available for this medication.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    {% if transactions %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-clock-history"></i> Recent Transactions
+                <a href="{% url 'medications:medication_history' medication.id %}" class="btn btn-sm btn-outline-primary float-end">
+                    View All History
+                </a>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Performed By</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.timestamp|date:"M d, Y h:i A" }}</td>
+                            <td>
+                                {% if transaction.transaction_type == 'addition' %}
+                                    <span class="badge bg-success">{{ transaction.get_transaction_type_display }}</span>
+                                {% elif transaction.transaction_type == 'dispensation' %}
+                                    <span class="badge bg-primary">{{ transaction.get_transaction_type_display }}</span>
+                                {% elif transaction.transaction_type == 'adjustment' %}
+                                    <span class="badge bg-warning text-dark">{{ transaction.get_transaction_type_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ transaction.get_transaction_type_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="{% if transaction.quantity_change > 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {% if transaction.quantity_change > 0 %}+{% endif %}{{ transaction.quantity_change }}
+                                </span>
+                            </td>
+                            <td>{{ transaction.performed_by.get_full_name|default:transaction.performed_by.username }}</td>
+                            <td>{{ transaction.notes|truncatewords:10 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="mb-5">
+        <a href="{% url 'medications:inventory_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Inventory
+        </a>
+        {% if inventory %}
+            <a href="{% url 'medications:update_inventory' medication.id %}" class="btn btn-warning">
+                <i class="bi bi-pencil-square"></i> Update Stock
+            </a>
+            <a href="{% url 'medications:medication_history' medication.id %}" class="btn btn-info">
+                <i class="bi bi-clock-history"></i> Full History
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+    }
+</style>
+{% endblock %}

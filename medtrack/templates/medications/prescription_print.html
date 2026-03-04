@@ -53,11 +53,8 @@
   }
   .barcode-wrap svg{
     width:100%;
-    height:80px;    /* visually balanced; scales on print */
+    height:80px;
     display:block;
-  }
-  .barcode-label{
-    font-size:10px; color:var(--muted); text-align:center; margin-top:2px
   }
 
   .grid{display:grid; grid-template-columns: repeat(12, 1fr); gap:8px}
@@ -102,7 +99,6 @@
 </head>
 <body>
 
-<!-- Screen toolbar -->
 <div class="toolbar no-print">
   <div class="container" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
     <div>
@@ -117,7 +113,6 @@
 </div>
 
 <div class="container">
-  <!-- Header -->
   <div class="header">
     <div>
       <div class="facility">San Jose District Jail - San Jose Occidental Mindoro</div>
@@ -129,15 +124,12 @@
     </div>
   </div>
 
-  <!-- Full-width barcode BELOW header -->
   <div class="barcode-band">
     <div class="barcode-note">Not valid without a signature</div>
     <div class="barcode-wrap">
-      <svg id="rxBarcode" data-value="{{ barcode_payload|escape }}"></svg>
     </div>
   </div>
 
-  <!-- Patient / RX meta -->
   <div class="box">
     <div class="box-h">Patient &amp; Prescription Details</div>
     <div class="box-b">
@@ -168,7 +160,6 @@
     </div>
   </div>
 
-  <!-- Directions -->
   <div class="box">
     <div class="box-h">Directions</div>
     <div class="box-b">
@@ -188,21 +179,31 @@
 
         <div class="col-12">
           <div class="label">Special Instructions / Notes</div>
-          <div class="field rows-2"></div>
+          <div class="field rows-2">{{ rx.notes|default:"" }}</div>
         </div>
       </div>
     </div>
-  </div>
+  
 
-  <!-- Dispensing / Pharmacy -->
   <div class="box">
     <div class="box-h">Dispensing / Pharmacy Use</div>
     <div class="box-b">
-      <div class="grid">
-        <div class="col-3">
-          <div class="label">Quantity Dispensed</div>
-          <div class="field"></div>
+      <div class="grid mb-3" style="margin-bottom: 15px;">
+        <div class="col-4">
+          <div class="label">Quantity Prescribed</div>
+          <div class="field">{{ rx.quantity_prescribed|default:"0" }}</div>
         </div>
+        <div class="col-4">
+          <div class="label">Quantity Dispensed (To Date)</div>
+          <div class="field">{{ rx.quantity_dispensed|default:"0" }}</div>
+        </div>
+        <div class="col-4">
+          <div class="label">Status</div>
+          <div class="field">{{ rx.status }}</div>
+        </div>
+      </div>
+
+     
         <div class="col-3">
           <div class="label">Lot / Batch No.</div>
           <div class="field"></div>
@@ -212,8 +213,7 @@
           <div class="field"></div>
         </div>
         <div class="col-3">
-          <div class="label">Dispensed Date</div>
-          <div class="field"></div>
+         
         </div>
       </div>
 
@@ -226,60 +226,6 @@
           <div class="sig-line"></div>
           <div class="sig-lbl">PHARMACIST SIGNATURE / PRC NO. / DATE</div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer hash with machine validation note -->
-  <div class="hash-footer">
-    <div>Machine validation (SHA-256 of barcode payload):</div>
-    <div class="hash-value" id="rxHash">
-      {% if barcode_sha256 %}{{ barcode_sha256 }}{% else %}<em>Computing…</em>{% endif %}
-    </div>
-    <div class="muted">If the hash above does not match the system record, this printout is not valid.</div>
-  </div>
-</div>
-
-<!-- JsBarcode via CDN -->
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-<script>
-  (function(){
-    // Render barcode full-width
-    const svg = document.getElementById('rxBarcode');
-    if (svg) {
-      const payload = svg.getAttribute('data-value') || '';
-      try {
-        JsBarcode(svg, payload, {
-          format: "code128",
-          displayValue: true,
-          font: "Arial",
-          fontSize: 12,
-          textMargin: 4,
-          margin: 0,
-          height: 60,
-          width: 2   // bars width; CSS scales to container width
-        });
-      } catch(e) { console.error("Barcode error:", e); }
-    }
-
-    // Compute SHA-256 of the barcode payload if not provided by server
-    async function sha256Hex(text){
-      const enc = new TextEncoder().encode(text);
-      const hash = await crypto.subtle.digest('SHA-256', enc);
-      const arr = Array.from(new Uint8Array(hash));
-      return arr.map(b => b.toString(16).padStart(2,'0')).join('');
-    }
-    const hashEl = document.getElementById('rxHash');
-    if (hashEl && hashEl.textContent.trim().toLowerCase().includes('computing')) {
-      const payload = (svg && svg.getAttribute('data-value')) || '';
-      if (payload) {
-        sha256Hex(payload).then(h => { hashEl.textContent = h; })
-          .catch(() => { hashEl.textContent = '(hash error)'; });
-      } else {
-        hashEl.textContent = '(no payload)';
-      }
-    }
-  })();
 </script>
 </body>
 </html>

@@ -17,10 +17,25 @@ class MedicalSpecialtyAdmin(admin.ModelAdmin):
 
 @admin.register(Physician)
 class PhysicianAdmin(admin.ModelAdmin):
-    list_display = ('username__first_name', 'username__last_name', 'employee_type', 'specialty', 'phone_number')
-    search_fields = ('username__first_name', 'username__last_name')
-    ordering = ('username__last_name',)
-    list_filter = ('employee_type', 'specialty')
+    list_display = ['get_first_name', 'get_last_name', 'get_username']
+    search_fields = ['username__first_name', 'username__last_name', 'username__username']
+    list_display_links = ['get_first_name', 'get_last_name']
+    
+    def get_first_name(self, obj):
+        return obj.username.first_name
+    get_first_name.short_description = 'First Name'
+    get_first_name.admin_order_field = 'username__first_name'
+    
+    def get_last_name(self, obj):
+        return obj.username.last_name
+    get_last_name.short_description = 'Last Name'
+    get_last_name.admin_order_field = 'username__last_name'
+    
+    def get_username(self, obj):
+        return obj.username.username
+    get_username.short_description = 'Username'
+    get_username.admin_order_field = 'username__username'
+    
     fieldsets = (
         (None, {
             'fields': ('username', 'employee_type', 'specialty')

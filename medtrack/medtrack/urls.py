@@ -16,13 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('pdl/', include('pdl.urls')),  # Include the URLs from the pdl app
-    path('consultations/', include('consultations.urls')),  # Include the URLs from the consultations app
-    path('medications/', include('medications.urls')),  # Include the URLs from the medications app
-    path("reports", include("reports.urls")),
+    path('pdl/', include('pdl.urls')),
+    path('consultations/', include('consultations.urls')),
+    path('medications/', include('medications.urls')),
+    path('reports/', include('reports.urls')),
+    path('user-guide/', TemplateView.as_view(template_name='user_guide.html'), name='user_guide'),
+    # Add other URL patterns as needed
 ]
 
 # redirect root URL to pdl app

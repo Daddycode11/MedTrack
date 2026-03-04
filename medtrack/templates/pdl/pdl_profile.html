@@ -357,5 +357,169 @@ PDL Profile - {{ pdl.pdl_profile }}
   </div>
 </div>
 
+<!-- ═══════ HEALTH CONDITIONS ═══════ -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card p-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="mb-0 d-flex align-items-center">
+          <i class="bi bi-heart-pulse pe-2 text-danger"></i>
+          Health Conditions
+        </h5>
+        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#addHealthConditionModal">
+          <i class="bi bi-plus-circle me-1"></i>Add Condition
+        </button>
+      </div>
+
+      {% if health_conditions %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Condition</th>
+                <th>Date Diagnosed</th>
+                <th>Notes</th>
+                <th class="text-center">Active</th>
+                <th>Recorded By</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for hc in health_conditions %}
+              <tr>
+                <td>
+                  {% if hc.condition == 'HTN' %}<span class="badge bg-danger me-1">HTN</span>
+                  {% elif hc.condition == 'DM' %}<span class="badge bg-warning text-dark me-1">DM</span>
+                  {% elif hc.condition == 'HEART' %}<span class="badge bg-danger me-1"><i class="bi bi-heart"></i></span>
+                  {% elif hc.condition == 'TB' %}<span class="badge bg-secondary me-1">TB</span>
+                  {% else %}<span class="badge bg-info me-1">{{ hc.condition }}</span>
+                  {% endif %}
+                  {{ hc.get_condition_display }}
+                </td>
+                <td>{{ hc.date_diagnosed|date:"Y-m-d"|default:"—" }}</td>
+                <td class="text-muted small">{{ hc.notes|default:"—"|truncatechars:60 }}</td>
+                <td class="text-center">
+                  {% if hc.is_active %}
+                    <span class="badge bg-success">Active</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Resolved</span>
+                  {% endif %}
+                </td>
+                <td class="small text-muted">{{ hc.recorded_by.get_full_name|default:hc.recorded_by.username|default:"—" }}</td>
+                <td>
+                  <div class="d-flex gap-1">
+                    <button class="btn btn-xs btn-outline-secondary btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editHealthModal{{ hc.pk }}">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <form method="post" action="{% url 'pdl:health_condition_delete' hc.pk %}" class="d-inline"
+                          onsubmit="return confirm('Remove this health condition?')">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-xs btn-outline-danger btn-sm">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Edit modal per condition -->
+              <div class="modal fade" id="editHealthModal{{ hc.pk }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <form method="post" action="{% url 'pdl:health_condition_edit' hc.pk %}">
+                      {% csrf_token %}
+                      <div class="modal-header">
+                        <h5 class="modal-title">Edit Health Condition</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body p-4">
+                        <div class="mb-3">
+                          <label class="form-label fw-semibold">Condition</label>
+                          <select name="condition" class="form-select" required>
+                            {% for code, label in condition_choices %}
+                              <option value="{{ code }}" {% if hc.condition == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                          </select>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label fw-semibold">Date Diagnosed</label>
+                          <input type="date" name="date_diagnosed" class="form-control"
+                                 value="{{ hc.date_diagnosed|date:'Y-m-d' }}">
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label fw-semibold">Notes</label>
+                          <textarea name="notes" class="form-control" rows="3">{{ hc.notes }}</textarea>
+                        </div>
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" name="is_active" id="isActive{{ hc.pk }}"
+                                 {% if hc.is_active %}checked{% endif %}>
+                          <label class="form-check-label" for="isActive{{ hc.pk }}">Currently Active</label>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted fst-italic mb-0">No health conditions recorded for this PDL.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Add Health Condition Modal -->
+<div class="modal fade" id="addHealthConditionModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'pdl:health_condition_add' pdl.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-heart-pulse me-2"></i>Add Health Condition</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Condition <span class="text-danger">*</span></label>
+            <select name="condition" class="form-select" required>
+              <option value="">— Select condition —</option>
+              {% for code, label in condition_choices %}
+                <option value="{{ code }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Date Diagnosed</label>
+            <input type="date" name="date_diagnosed" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Notes</label>
+            <textarea name="notes" class="form-control" rows="3" placeholder="Additional details…"></textarea>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="is_active" id="newIsActive" checked>
+            <label class="form-check-label" for="newIsActive">Currently Active</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-plus-circle me-1"></i>Add Condition
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 </div>
 {% endblock %}
