@@ -92,22 +92,19 @@ WSGI_APPLICATION = 'medtrack.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-_database_url = config('DATABASE_URL', default='')
-if _database_url:
-    DATABASES = {
-        'default': dj_database_url.parse(
-            _database_url,
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': config('DATABASE_PATH', default=str(BASE_DIR / 'db.sqlite3')),
-        }
-    }
+_NEON_URL = (
+    'postgresql://neondb_owner:npg_KBznI0UkuY2G'
+    '@ep-spring-rice-aim1lqck-pooler.c-4.us-east-1.aws.neon.tech'
+    '/neondb?sslmode=require&channel_binding=require'
+)
+_database_url = config('DATABASE_URL', default=_NEON_URL)
+DATABASES = {
+    'default': dj_database_url.parse(
+        _database_url,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
 
 
 # Password validation
