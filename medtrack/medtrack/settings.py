@@ -27,7 +27,15 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-umoxur)@7vg7m!s8_8oo=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=Csv())
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+
+# Auto-add Vercel deployment URLs (Vercel sets these automatically)
+for _vercel_host in [
+    os.environ.get('VERCEL_URL', ''),
+    os.environ.get('VERCEL_PROJECT_PRODUCTION_URL', ''),
+]:
+    if _vercel_host and _vercel_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_vercel_host)
 
 
 # Application definition
