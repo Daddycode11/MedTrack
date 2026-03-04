@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url
 from decouple import config, Csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -91,13 +92,22 @@ WSGI_APPLICATION = 'medtrack.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-_db_path = config('DATABASE_PATH', default=str(BASE_DIR / 'db.sqlite3'))
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': _db_path,
+_database_url = config('DATABASE_URL', default='')
+if _database_url:
+    DATABASES = {
+        'default': dj_database_url.parse(
+            _database_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': config('DATABASE_PATH', default=str(BASE_DIR / 'db.sqlite3')),
+        }
+    }
 
 
 # Password validation
