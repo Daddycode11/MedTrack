@@ -1,5 +1,6 @@
 asgiref==3.8.1
 python-decouple==3.8
+whitenoise==6.8.2
 blessings==1.7
 colorama==0.4.6
 colour-runner==0.1.1
