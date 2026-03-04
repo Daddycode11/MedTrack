@@ -83,10 +83,11 @@ WSGI_APPLICATION = 'medtrack.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+_db_path = config('DATABASE_PATH', default=str(BASE_DIR / 'db.sqlite3'))
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': _db_path,
     }
 }
 

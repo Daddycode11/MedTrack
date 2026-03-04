@@ -1,0 +1,13 @@
+asgiref==3.8.1
+python-decouple==3.8
+whitenoise==6.8.2
+Django==5.2
+django-filter==25.1
+django-widget-tweaks==1.5.0
+python-dateutil==2.9.0.post0
+pytz==2025.2
+sqlparse==0.5.3
+tzdata==2025.2
+pandas==3.0.1
+numpy==2.3.3
+tabulate==0.9.0
