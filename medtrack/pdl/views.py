@@ -109,6 +109,7 @@ def pdl_profile(request, username):
         'detention_instance': detention_instance,
         'consultations':      consultations,
         'prescriptions':      prescriptions,
+        'condition_choices':  HealthCondition.CONDITION_CHOICES,
     })
 
 
