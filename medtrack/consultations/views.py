@@ -7,7 +7,7 @@ from pdl.decorators import role_required
 from django.views.generic import CreateView
 from django.utils import timezone
 from django.utils.dateparse import parse_date
-from datetime import date
+from datetime import date, timedelta
 import datetime as dt
 import calendar
 
@@ -118,16 +118,32 @@ def doctor_dashboard(request):
     • Otherwise (admin / staff) → show all upcoming consultations so the
       dashboard is still useful without raising a 404.
     """
+    today = date.today()
+    seven_days_later = today + timedelta(days=7)
+    
     try:
         physician = Physician.objects.get(username=request.user)
         upcoming_consultations = (
             Consultation.objects
             .filter(
                 physician=physician,
-                consultation_date_date_only__gte=date.today(),
+                consultation_date_date_only__gte=today,
                 status="scheduled",
             )
             .order_by('consultation_date_date_only', 'consultation_time_block')[:5]
+        )
+        # Follow-up consultations due within next 7 days for this physician
+        followup_due = (
+            Consultation.objects
+            .filter(
+                physician=physician,
+                is_followup=True,
+                status="scheduled",
+                consultation_date_date_only__gte=today,
+                consultation_date_date_only__lte=seven_days_later,
+            )
+            .select_related('pdl_profile__username', 'parent_consultation')
+            .order_by('consultation_date_date_only')
         )
     except Physician.DoesNotExist:
         physician = None
@@ -135,16 +151,30 @@ def doctor_dashboard(request):
         upcoming_consultations = (
             Consultation.objects
             .filter(
-                consultation_date_date_only__gte=date.today(),
+                consultation_date_date_only__gte=today,
                 status="scheduled",
             )
             .select_related('physician', 'pdl_profile', 'location')
             .order_by('consultation_date_date_only', 'consultation_time_block')[:5]
         )
+        # All follow-ups due within next 7 days
+        followup_due = (
+            Consultation.objects
+            .filter(
+                is_followup=True,
+                status="scheduled",
+                consultation_date_date_only__gte=today,
+                consultation_date_date_only__lte=seven_days_later,
+            )
+            .select_related('pdl_profile__username', 'physician', 'parent_consultation')
+            .order_by('consultation_date_date_only')
+        )
 
     context = {
         'physician':              physician,
         'upcoming_consultations': upcoming_consultations,
+        'followup_due':           followup_due,
+        'followup_count':         followup_due.count() if followup_due else 0,
     }
     return render(request, "consultations/doctor_dashboard.html", context)
 
@@ -294,7 +324,7 @@ def reschedule_consultation(request, consultation_id):
 
 @role_required('admin', 'staff', 'doctor')
 def complete_consultation(request, consultation_id):
-    """Confirm then mark a consultation as completed."""
+    """Confirm then mark a consultation as completed and schedule follow-up."""
     consultation = get_object_or_404(
         Consultation.objects.select_related('physician'), id=consultation_id
     )
@@ -310,6 +340,46 @@ def complete_consultation(request, consultation_id):
             consultation.completed_at = timezone.now()
 
         consultation.save()
+        
+        # Auto-schedule follow-up consultation after 7 days
+        followup_days = getattr(consultation, 'followup_days', 7) or 7
+        followup_date = consultation.consultation_date_date_only + timedelta(days=followup_days)
+        
+        # Check if a follow-up already exists for this consultation
+        if not consultation.followup_scheduled:
+            try:
+                # Get a "Follow-up" reason or use the same reason
+                followup_reason, _ = ConsultationReason.objects.get_or_create(
+                    name="Follow-up Consultation",
+                    defaults={"description": "Scheduled follow-up consultation"}
+                )
+                
+                # Create the follow-up consultation
+                followup = Consultation.objects.create(
+                    pdl_profile=consultation.pdl_profile,
+                    physician=consultation.physician,
+                    location=consultation.location,
+                    reason=followup_reason,
+                    consultation_date_date_only=followup_date,
+                    consultation_time_block=consultation.consultation_time_block,
+                    status='scheduled',
+                    is_followup=True,
+                    parent_consultation=consultation,
+                    notes=f"Follow-up for consultation on {consultation.consultation_date_date_only}",
+                )
+                
+                # Mark the original consultation as having a follow-up scheduled
+                consultation.followup_scheduled = True
+                consultation.save()
+                
+                messages.info(
+                    request,
+                    f"Follow-up consultation scheduled for {followup_date.strftime('%B %d, %Y')}."
+                )
+            except Exception as e:
+                # If follow-up creation fails (e.g., due to unique constraint), just log it
+                messages.warning(request, f"Could not auto-schedule follow-up: {e}")
+        
         messages.success(
             request,
             f"Consultation with {consultation.physician} on "

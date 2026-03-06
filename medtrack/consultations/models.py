@@ -274,6 +274,19 @@ class Consultation(models.Model):
         null=True
     )
 
+    # --- Follow-up Consultation Fields ---
+    is_followup = models.BooleanField("Is a follow-up consultation", default=False)
+    parent_consultation = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='followups',
+        verbose_name="Parent consultation"
+    )
+    followup_scheduled = models.BooleanField("Follow-up has been scheduled", default=False)
+    followup_days = models.IntegerField("Days until follow-up", default=7)
+
     def __str__(self):
         # Consultation with Physician on Month Year, Time Block
         # lookup block name in enum

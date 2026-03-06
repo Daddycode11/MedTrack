@@ -368,6 +368,44 @@
           </div>
         </div>
 
+        <!-- Follow-up Consultations Due -->
+        {% if followup_count > 0 %}
+        <div class="col-12">
+          <div class="info-card delay-2" style="background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.3);">
+            <div class="section-label" style="color: #f59e0b;">
+              <i class="bi bi-bell-fill me-1"></i>Follow-up Consultations Due ({{ followup_count }})
+            </div>
+
+            {% for fu in followup_due %}
+            <div class="consult-item" style="border-color: rgba(245,158,11,.2); background: rgba(245,158,11,.05);">
+              <div class="consult-dot" style="background: rgba(245,158,11,.15); border-color: rgba(245,158,11,.3); color: #f59e0b;">
+                <i class="bi bi-arrow-repeat"></i>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                  <span class="consult-date">{{ fu.consultation_date_date_only }}</span>
+                  <span class="status-chip" style="background: rgba(245,158,11,.15); border-color: rgba(245,158,11,.3); color: #f59e0b;">FOLLOW-UP</span>
+                </div>
+                <div class="consult-time">{{ fu.consultation_time_block_display }}</div>
+                <div class="consult-pdl">
+                  <i class="bi bi-person me-1" style="opacity:.5;"></i>{{ fu.pdl_profile }}
+                  {% if not physician %}
+                    · <span style="opacity:.5;">Dr. {{ fu.physician }}</span>
+                  {% endif %}
+                </div>
+                {% if fu.parent_consultation %}
+                <div style="font-size:.75rem; opacity:.5; margin-top:.3rem;">
+                  <i class="bi bi-link-45deg"></i> Follow-up for: {{ fu.parent_consultation.consultation_date_date_only }}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+
+          </div>
+        </div>
+        {% endif %}
+
         <!-- Upcoming Consultations -->
         <div class="col-12">
           <div class="info-card delay-3">
