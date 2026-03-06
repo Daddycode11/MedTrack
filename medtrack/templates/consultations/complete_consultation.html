@@ -6,17 +6,69 @@
 {% block content %}
 <div class="container mt-4">
   <h1 class="h3 mb-4">Complete Consultation</h1>
-  <div class="alert alert-info">
-    Are you sure you want to mark the consultation with
-    <strong>{{ consultation.physician }}</strong> on
-    <strong>{{ consultation.consultation_date_date_only }}</strong> as <em>completed</em>?
+  
+  <div class="card mb-4">
+    <div class="card-header bg-info text-white">
+      <i class="bi bi-info-circle"></i> Consultation Details
+    </div>
+    <div class="card-body">
+      <p><strong>PDL:</strong> {{ consultation.pdl_profile }}</p>
+      <p><strong>Physician:</strong> {{ consultation.physician }}</p>
+      <p><strong>Date:</strong> {{ consultation.consultation_date_date_only }}</p>
+      <p><strong>Reason:</strong> {{ consultation.reason }}</p>
+    </div>
   </div>
+
   <form method="post">
     {% csrf_token %}
-    <button type="submit" class="btn btn-primary">
-      <i class="bi bi-check-circle"></i> Yes, Mark as Completed
-    </button>
-    <a href="{% url 'consultations:consultation_calendar' %}" class="btn btn-secondary">No, Go Back</a>
+    
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <i class="bi bi-clipboard2-pulse"></i> Final Remarks
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="fr_conclusion" class="form-label">Final Conclusion</label>
+          <select class="form-select" id="fr_conclusion" name="fr_conclusion">
+            <option value="">-- Select Conclusion --</option>
+            <option value="HEALTHY" {% if consultation.fr_conclusion == 'HEALTHY' %}selected{% endif %}>Practically healthy</option>
+            <option value="SBIRT" {% if consultation.fr_conclusion == 'SBIRT' %}selected{% endif %}>SBIRT</option>
+            <option value="PHILPEN" {% if consultation.fr_conclusion == 'PHILPEN' %}selected{% endif %}>PhilPEN</option>
+            <option value="NEURO_PSYCH" {% if consultation.fr_conclusion == 'NEURO_PSYCH' %}selected{% endif %}>Neuro-psychiatric evaluation</option>
+            <option value="ILL_TREATMENT" {% if consultation.fr_conclusion == 'ILL_TREATMENT' %}selected{% endif %}>Further documentation of allegations of ill-treatment</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="fr_other_impressions" class="form-label">Other Impressions / Diagnosis</label>
+          <textarea class="form-control" id="fr_other_impressions" name="fr_other_impressions" rows="3" placeholder="Enter diagnosis or other impressions...">{{ consultation.fr_other_impressions|default:'' }}</textarea>
+        </div>
+
+        <div class="mb-3">
+          <label for="fr_recommendation" class="form-label">Recommendation</label>
+          <select class="form-select" id="fr_recommendation" name="fr_recommendation">
+            <option value="">-- Select Recommendation --</option>
+            <option value="DORM" {% if consultation.fr_recommendation == 'DORM' %}selected{% endif %}>To be accommodated in general dormitory</option>
+            <option value="ISOLATED" {% if consultation.fr_recommendation == 'ISOLATED' %}selected{% endif %}>To be isolated</option>
+            <option value="HOSPITAL" {% if consultation.fr_recommendation == 'HOSPITAL' %}selected{% endif %}>To be hospitalized</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="notes" class="form-label">Additional Notes</label>
+          <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional notes...">{{ consultation.notes|default:'' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-success">
+        <i class="bi bi-check-circle"></i> Complete Consultation
+      </button>
+      <a href="{% url 'consultations:consultation_calendar' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Cancel
+      </a>
+    </div>
   </form>
 </div>
 {% endblock %}

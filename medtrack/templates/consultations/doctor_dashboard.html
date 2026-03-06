@@ -369,9 +369,10 @@
         </div>
 
         <!-- Follow-up Consultations Due -->
+        <!-- DEBUG: followup_count = {{ followup_count }} -->
         {% if followup_count > 0 %}
         <div class="col-12">
-          <div class="info-card delay-2" style="background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.3);">
+          <div class="info-card delay-2" style="background: rgba(245,158,11,.15); border: 2px solid #f59e0b;">
             <div class="section-label" style="color: #f59e0b;">
               <i class="bi bi-bell-fill me-1"></i>Follow-up Consultations Due ({{ followup_count }})
             </div>

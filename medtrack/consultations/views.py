@@ -119,7 +119,7 @@ def doctor_dashboard(request):
       dashboard is still useful without raising a 404.
     """
     today = date.today()
-    seven_days_later = today + timedelta(days=7)
+    fourteen_days_later = today + timedelta(days=14)  # Extended to show follow-ups scheduled 7 days out
     
     try:
         physician = Physician.objects.get(username=request.user)
@@ -132,7 +132,7 @@ def doctor_dashboard(request):
             )
             .order_by('consultation_date_date_only', 'consultation_time_block')[:5]
         )
-        # Follow-up consultations due within next 7 days for this physician
+        # Follow-up consultations due within next 14 days for this physician
         followup_due = (
             Consultation.objects
             .filter(
@@ -140,7 +140,7 @@ def doctor_dashboard(request):
                 is_followup=True,
                 status="scheduled",
                 consultation_date_date_only__gte=today,
-                consultation_date_date_only__lte=seven_days_later,
+                consultation_date_date_only__lte=fourteen_days_later,
             )
             .select_related('pdl_profile__username', 'parent_consultation')
             .order_by('consultation_date_date_only')
@@ -157,14 +157,14 @@ def doctor_dashboard(request):
             .select_related('physician', 'pdl_profile', 'location')
             .order_by('consultation_date_date_only', 'consultation_time_block')[:5]
         )
-        # All follow-ups due within next 7 days
+        # All follow-ups due within next 14 days
         followup_due = (
             Consultation.objects
             .filter(
                 is_followup=True,
                 status="scheduled",
                 consultation_date_date_only__gte=today,
-                consultation_date_date_only__lte=seven_days_later,
+                consultation_date_date_only__lte=fourteen_days_later,
             )
             .select_related('pdl_profile__username', 'physician', 'parent_consultation')
             .order_by('consultation_date_date_only')
@@ -330,6 +330,12 @@ def complete_consultation(request, consultation_id):
     )
 
     if request.method == "POST":
+        # Save form data
+        consultation.fr_conclusion = request.POST.get('fr_conclusion') or None
+        consultation.fr_other_impressions = request.POST.get('fr_other_impressions') or None
+        consultation.fr_recommendation = request.POST.get('fr_recommendation') or None
+        consultation.notes = request.POST.get('notes') or consultation.notes
+        
         # Support both Enum and plain-string status fields
         if hasattr(Consultation, "Status") and hasattr(Consultation.Status, "COMPLETED"):
             consultation.status = Consultation.Status.COMPLETED
@@ -350,7 +356,7 @@ def complete_consultation(request, consultation_id):
             try:
                 # Get a "Follow-up" reason or use the same reason
                 followup_reason, _ = ConsultationReason.objects.get_or_create(
-                    name="Follow-up Consultation",
+                    reason="Follow-up Consultation",
                     defaults={"description": "Scheduled follow-up consultation"}
                 )
                 
