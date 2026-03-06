@@ -165,4 +165,17 @@ LOGIN_URL = '/pdl/'
 LOGIN_REDIRECT_URL = '/pdl/list/'
 LOGOUT_REDIRECT_URL = '/pdl/'
 
+# Email Configuration
+# For development - prints emails to console
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# For production, configure SMTP settings:
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'your-email@gmail.com'
+# EMAIL_HOST_PASSWORD = 'your-app-password'
+# DEFAULT_FROM_EMAIL = 'MedTrack <your-email@gmail.com>'
+
 TEST_RUNNER = 'test_runner.CustomTestRunner'

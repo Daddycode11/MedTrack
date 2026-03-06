@@ -24,5 +24,6 @@ urlpatterns = [
     path("admin-panel/users/create/", views.admin_create_user, name="admin_create_user"),
     path("admin-panel/users/<int:pk>/role/", views.admin_edit_role, name="admin_edit_role"),
     path("admin-panel/users/<int:pk>/delete/", views.admin_delete_user, name="admin_delete_user"),
+    path("admin-panel/users/<int:pk>/reset-password/", views.admin_reset_password, name="admin_reset_password"),
     path("admin-panel/users/<int:pk>/history/", views.admin_user_history, name="admin_user_history"),
 ]

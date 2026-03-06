@@ -413,6 +413,32 @@ def admin_delete_user(request, pk):
 
 
 @role_required('admin')
+@require_POST
+def admin_reset_password(request, pk):
+    """Reset a user's password (IT Admin action)."""
+    user = get_object_or_404(User, pk=pk)
+    new_password = request.POST.get('new_password', '').strip()
+    confirm_password = request.POST.get('confirm_password', '').strip()
+    
+    if not new_password:
+        messages.error(request, 'Password cannot be empty.')
+        return redirect('pdl:admin_dashboard')
+    
+    if new_password != confirm_password:
+        messages.error(request, 'Passwords do not match.')
+        return redirect('pdl:admin_dashboard')
+    
+    if len(new_password) < 8:
+        messages.error(request, 'Password must be at least 8 characters.')
+        return redirect('pdl:admin_dashboard')
+    
+    user.set_password(new_password)
+    user.save()
+    messages.success(request, f'Password reset successfully for "{user.get_full_name() or user.username}".')
+    return redirect('pdl:admin_dashboard')
+
+
+@role_required('admin')
 def admin_user_history(request, pk):
     """Show full activity history for a system user."""
     from consultations.models import Physician, Consultation

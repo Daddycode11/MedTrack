@@ -23,8 +23,10 @@ def medication_list(request):
     """
     Ipinapakita ang prescriptions na naka-group by PDL.
     Tugma ito sa HTML template mo na gumagamit ng 'grouped_by_pdl'.
+    Doctors only see their own prescriptions.
     """
     from django.core.paginator import Paginator
+    from consultations.models import Physician
     
     q = (request.GET.get("q") or "").strip()
 
@@ -42,6 +44,14 @@ def medication_list(request):
             "medication__name",
         )
     )
+
+    # Filter by logged-in doctor - doctors only see their own prescriptions
+    try:
+        physician = Physician.objects.get(username=request.user)
+        qs = qs.filter(prescribed_by=physician)
+    except Physician.DoesNotExist:
+        # User is not a physician (admin/pharmacist) - can see all
+        pass
 
     if q:
         qs = qs.filter(
@@ -270,11 +280,20 @@ def medication_history(request, pk):
 @role_required('admin', 'doctor')
 @login_required
 def prescription_create(request):
+    from consultations.models import Physician
+    
+    # Get Physician linked to logged-in user
+    try:
+        physician = Physician.objects.get(username=request.user)
+    except Physician.DoesNotExist:
+        messages.error(request, "You must be registered as a physician to create prescriptions.")
+        return redirect("medications:medication_list")
+    
     if request.method == "POST":
         form = MedicationPrescriptionForm(request.POST)
         if form.is_valid():
             presc = form.save(commit=False)
-            presc.prescribed_by = request.user  # Link prescription to logged-in doctor
+            presc.prescribed_by = physician  # Link prescription to logged-in doctor's Physician profile
             presc.save()
             messages.success(request, "Prescription recorded successfully.")
             return redirect(reverse("medications:prescription_detail", args=[presc.id]))
