@@ -120,7 +120,7 @@ def pdl_profile(request, username):
 #  ADD PDL
 # ─────────────────────────────────────────────────────────────
 
-@role_required('admin', 'staff')
+@role_required('admin', 'staff', 'doctor')
 @transaction.atomic
 def add_pdl(request):
     """
