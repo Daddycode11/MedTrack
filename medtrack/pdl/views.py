@@ -104,12 +104,15 @@ def pdl_profile(request, username):
         .first()
     )
 
+    health_conditions = pdl.health_conditions.all()
+
     return render(request, 'pdl/pdl_profile.html', {
         'pdl':                pdl,
         'detention_instance': detention_instance,
         'consultations':      consultations,
         'prescriptions':      prescriptions,
         'condition_choices':  HealthCondition.CONDITION_CHOICES,
+        'health_conditions':  health_conditions,
     })
 
 
