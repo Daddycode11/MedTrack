@@ -66,7 +66,7 @@ class MedicationPrescriptionForm(forms.ModelForm):
             'dosage': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., 500mg'}),
             'frequency': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., 3 times a day'}),
             'duration': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., 7 days'}),
-            'prescribed_by': forms.Select(attrs={'class': 'form-select'}),
+            'prescribed_by': forms.HiddenInput(),  # Hide prescribed_by field
             'quantity_prescribed': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
             'quantity_dispensed': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'value': '0'}),
             # Tinanggal ang status widget

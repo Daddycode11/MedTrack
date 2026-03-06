@@ -222,6 +222,13 @@ def health_condition_add(request, pdl_id):
         date_diag    = request.POST.get('date_diagnosed') or None
         notes        = request.POST.get('notes', '')
         is_active    = request.POST.get('is_active') == 'on'
+        if not condition:
+            messages.error(request, "Condition is required.")
+            return redirect('pdl:pdl_profile', username=pdl.username.username)
+
+        if not date_diag:
+            messages.warning(request, "Date diagnosed is recommended but not required.")
+
         HealthCondition.objects.create(
             pdl_profile=pdl,
             condition=condition,
@@ -285,8 +292,11 @@ def pdl_detention_room_api(request, pk):
 
 @role_required('admin')
 def admin_dashboard(request):
-    """Custom IT admin panel — manage system users and their roles."""
+    """Ensure only Admin users can access the Administrator dashboard."""
     from consultations.models import MedicalSpecialty
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    
     pdl_user_ids = PDLProfile.objects.values_list('username_id', flat=True)
     system_users = (
         User.objects
@@ -294,6 +304,16 @@ def admin_dashboard(request):
         .select_related('userprofile')
         .order_by('last_name', 'first_name', 'username')
     )
+    
+    # Search functionality
+    search_query = request.GET.get('search', '').strip()
+    if search_query:
+        system_users = system_users.filter(
+            Q(username__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query)
+        )
 
     stats = {
         'total':      system_users.count(),
@@ -302,12 +322,19 @@ def admin_dashboard(request):
         'doctor':     system_users.filter(userprofile__role='doctor').count(),
         'pharmacist': system_users.filter(userprofile__role='pharmacist').count(),
     }
+    
+    # Pagination
+    paginator = Paginator(system_users, 10)  # 10 users per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     return render(request, 'pdl/admin_dashboard.html', {
-        'system_users': system_users,
+        'system_users': page_obj,
+        'page_obj':     page_obj,
         'stats':        stats,
         'role_choices': UserRole.choices,
         'specialties':  MedicalSpecialty.objects.order_by('name'),
+        'search_query': search_query,
     })
 
 

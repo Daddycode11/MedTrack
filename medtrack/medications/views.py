@@ -24,6 +24,8 @@ def medication_list(request):
     Ipinapakita ang prescriptions na naka-group by PDL.
     Tugma ito sa HTML template mo na gumagamit ng 'grouped_by_pdl'.
     """
+    from django.core.paginator import Paginator
+    
     q = (request.GET.get("q") or "").strip()
 
     qs = (
@@ -50,39 +52,6 @@ def medication_list(request):
             Q(medication__generic_name__name__icontains=q)
         )
 
-    # Dito ginagawa ang grouping logic
-    grouped = OrderedDict()
-    for rx in qs:
-        key = rx.pdl_profile_id
-        if key not in grouped:
-            grouped[key] = {
-                "pdl": rx.pdl_profile,
-                "items": [],
-            }
-        grouped[key]["items"].append(rx)
-
-    totals = {
-        "pdl_count": len(grouped),
-        "rx_count": qs.count(),
-    }
-
-    # SIGURADUHIN: Ang key dito ay 'grouped_by_pdl' para mabasa ng HTML mo
-    return render(request, "medications/medication_list.html", {
-        "grouped_by_pdl": grouped, 
-        "q": q,
-        "totals": totals,
-    }
-    )
-
-    if q:
-        qs = qs.filter(
-            Q(pdl_profile__username__first_name__icontains=q) |
-            Q(pdl_profile__username__last_name__icontains=q) |
-            Q(pdl_profile__username__username__icontains=q) |
-            Q(medication__name__icontains=q) |
-            Q(medication__generic_name__name__icontains=q)
-        )
-
     # Group by PDL
     grouped = OrderedDict()
     for rx in qs:
@@ -98,9 +67,16 @@ def medication_list(request):
         "pdl_count": len(grouped),
         "rx_count": qs.count(),
     }
+    
+    # Paginate grouped results
+    grouped_list = list(grouped.values())
+    paginator = Paginator(grouped_list, 10)  # 10 PDLs per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     return render(request, "medications/medication_list.html", {
-        "grouped_by_pdl": grouped,
+        "grouped_by_pdl": {i: grp for i, grp in enumerate(page_obj)},
+        "page_obj": page_obj,
         "q": q,
         "totals": totals,
     })
@@ -110,6 +86,8 @@ def medication_inventory_list(request):
     """
     Display all medications with their inventory status.
     """
+    from django.core.paginator import Paginator
+    
     q = (request.GET.get("q") or "").strip()
     
     medications = (
@@ -142,8 +120,14 @@ def medication_inventory_list(request):
             else:
                 in_stock_count += 1
     
+    # Pagination
+    paginator = Paginator(medications, 10)  # 10 items per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     context = {
-        'medications': medications,
+        'medications': page_obj,
+        'page_obj': page_obj,
         'q': q,
         'stats': {
             'total': total_meds,
@@ -284,11 +268,14 @@ def medication_history(request, pk):
     })
 
 @role_required('admin', 'doctor')
+@login_required
 def prescription_create(request):
     if request.method == "POST":
         form = MedicationPrescriptionForm(request.POST)
         if form.is_valid():
-            presc = form.save()
+            presc = form.save(commit=False)
+            presc.prescribed_by = request.user  # Link prescription to logged-in doctor
+            presc.save()
             messages.success(request, "Prescription recorded successfully.")
             return redirect(reverse("medications:prescription_detail", args=[presc.id]))
         messages.error(request, "Please correct the errors below.")

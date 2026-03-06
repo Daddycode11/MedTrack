@@ -1,8 +1,8 @@
-## PART 1 : DETENTION REASONS
+## part 1 : detention reasons
 
 from pdl.models import DetentionReason
 
-# Suggested detention reasons
+# suggested detention reasons
 detention_reasons = [
     {"reason": "Theft", "description": "Unlawful taking of another's property."},
     {"reason": "Assault", "description": "Physical attack or threat of attack."},
@@ -16,10 +16,10 @@ detention_reasons = [
     {"reason": "Burglary", "description": "Illegal entry into a building with intent to commit a crime."},
 ]
 
-# Delete existing records
+# delete existing records
 DetentionReason.objects.all().delete()
 
-# Populate the database
+# populate the database
 for reason_data in detention_reasons:
     reason, created = DetentionReason.objects.get_or_create(
         reason=reason_data["reason"],
@@ -31,10 +31,10 @@ for reason_data in detention_reasons:
         print(f"Detention reason already exists: {reason.reason}")
 
 
-## PART 2 : DETENTION TYPES
+## part 2 : detention types
 from pdl.models import DetentionStatus
 
-# Suggested detention statuses
+# suggested detention statuses
 detention_statuses = [
     {"status": "In Custody", "description": "Currently detained in a facility."},
     {"status": "Released", "description": "No longer in custody."},
@@ -44,10 +44,10 @@ detention_statuses = [
     {"status": "Under Investigation", "description": "Being investigated but not yet detained."},
 ]
 
-# Delete existing records
+# delete existing records
 DetentionStatus.objects.all().delete()
 
-# Populate the database
+# populate the database
 for status_data in detention_statuses:
     status, created = DetentionStatus.objects.get_or_create(
         status=status_data["status"],
@@ -58,12 +58,13 @@ for status_data in detention_statuses:
     else:
         print(f"Detention status already exists: {status.status}")
 
-## PART 3 : PDL Profiles
+
+## part 3 : pdl profiles
 
 from pdl.models import PDLProfile
 from django.contrib.auth.models import User
 
-# Suggested PDL profiles
+# suggested pdl profiles
 pdl_users = [
     {"username": "johndoe", "email": "johndoe@email.com", "phone_number": "1234567890", "first_name": "John", "last_name": "Doe"},
     {"username": "janesmith", "email": "janesmith@email.com", "phone_number": "9876543210", "first_name": "Jane", "last_name": "Smith"},
@@ -78,11 +79,11 @@ pdl_users = [
     {"username": "danielthomas", "email": "danielthomas@email.com", "phone_number": "9999876543", "first_name": "Daniel", "last_name": "Thomas"},
 ]
 
-# Delete existing records
+# delete existing records
 PDLProfile.objects.all().delete()
 User.objects.filter(username__in=[user["username"] for user in pdl_users]).delete()
 
-# Populate the database
+# populate the database
 for pdl_data in pdl_users:
     user, created = User.objects.get_or_create(
         username=pdl_data["username"],
@@ -110,12 +111,12 @@ for pdl_data in pdl_users:
     else:   
         print(f"PDL profile already exists for: {pdl_profile.username.username}")
     
-## PART 4 : DETENTION INSTANCES
+## part 4 : detention instances
 from pdl.models import DetentionInstance
 from datetime import datetime, timedelta
 import random
 
-# Suggested detention instances
+# suggested detention instances
 detention_instances = [
     {
         "pdl_profile": PDLProfile.objects.get(username=User.objects.get(username="johndoe")),
@@ -209,10 +210,10 @@ detention_instances = [
     },
 ]
 
-# Delete existing records
+# delete existing records
 DetentionInstance.objects.all().delete()
 
-# Populate the database
+# populate the database
 for instance_data in detention_instances:
     instance, created = DetentionInstance.objects.get_or_create(
         pdl_profile=instance_data["pdl_profile"],

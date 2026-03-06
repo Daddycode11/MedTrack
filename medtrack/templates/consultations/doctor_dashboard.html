@@ -195,10 +195,12 @@
           {% endif %}
         </h1>
         <div class="dash-subtitle">
-          {% if physician %}
-            {{ physician.specialty.name|default:"Physician" }} · Health Monitoring Dashboard
+          {% if request.user.userprofile.role == 'doctor' %}
+            Physician
+          {% elif request.user.userprofile.role == 'admin' %}
+            Administrator
           {% else %}
-            Administrator · Health Monitoring Dashboard
+            Staff
           {% endif %}
         </div>
         <div class="dash-role-badge">

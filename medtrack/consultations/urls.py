@@ -26,6 +26,7 @@ app_name = 'consultations'
 
 urlpatterns = [
     path("new/", views.ConsultationCreateView.as_view(), name="consultation_create"),
+    path("history/", views.consultation_history, name="consultation_history"),
 
     path('doctor-dashboard', views.doctor_dashboard, name='doctor_dashboard'),
     path('calendar/', views.all_consultations, name='consultation_calendar'),

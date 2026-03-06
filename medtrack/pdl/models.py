@@ -1,4 +1,3 @@
-
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
@@ -7,8 +6,16 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 # Create your models here.
 class DetentionStatus(models.Model):
-    status = models.CharField(_("Status"), max_length=100)
-    description = models.TextField(_("Description"))
+    STATUS_CHOICES = [
+        ("Under Investigation", "Under Investigation"),
+        ("Released", "Released"),
+        ("Transferred", "Transferred"),
+        ("On Bail", "On Bail"),
+        ("Escaped", "Escaped"),
+    ]
+
+    status = models.CharField("Status", max_length=100, choices=STATUS_CHOICES)
+    description = models.TextField("Description", blank=True, null=True)
 
     def __str__(self):
         return self.status
@@ -141,15 +148,23 @@ class PDLProfile(models.Model):
 
 
 class DetentionReason(models.Model):
-    reason = models.CharField(_("Reason"), max_length=255)
-    description = models.TextField(_("Description"))
+    REASON_CHOICES = [
+        ("Theft", "Theft"),
+        ("Assault", "Assault"),
+        ("Drug Possession", "Drug Possession"),
+        ("Fraud", "Fraud"),
+        ("Vandalism", "Vandalism"),
+    ]
+
+    reason = models.CharField("Reason", max_length=255, choices=REASON_CHOICES)
+    description = models.TextField("Description", blank=True, null=True)
 
     def __str__(self):
         return self.reason
 
     class Meta:
-        verbose_name = _("Detention Reason")
-        verbose_name_plural = _("Detention Reasons")
+        verbose_name = "Detention Reason"
+        verbose_name_plural = "Detention Reasons"
 
 
 class UserRole(models.TextChoices):

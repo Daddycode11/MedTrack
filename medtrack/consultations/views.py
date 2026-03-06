@@ -178,6 +178,18 @@ def create_consultation(request):
 
             consultation_date = dt.datetime.strptime(date_str, '%Y-%m-%d').date()
 
+            if not time_block:
+                messages.error(request, "Time block is required.")
+                return redirect('consultations:create')
+
+            if not physician:
+                messages.error(request, "Physician is required.")
+                return redirect('consultations:create')
+
+            if not reason:
+                messages.error(request, "Reason is required.")
+                return redirect('consultations:create')
+
             if not hasattr(ConsultationTimeBlock, time_block):
                 raise ValueError(f"Invalid time block: {time_block}")
 
@@ -383,3 +395,65 @@ def consultation_time_block_list_api(request):
         if "08:00" <= block.value[0] <= "17:00"
     ]
     return JsonResponse(data, safe=False)
+
+
+# ─────────────────────────────────────────────────────────────
+#  CONSULTATION HISTORY
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+def consultation_history(request):
+    """
+    Display consultation history - all consultations with filtering options.
+    Shows completed, cancelled and all past consultations.
+    """
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    
+    q = request.GET.get('q', '').strip()
+    status_filter = request.GET.get('status', '')
+    
+    consultations = (
+        Consultation.objects
+        .select_related('pdl_profile__username', 'physician__username', 'location', 'reason')
+        .order_by('-consultation_date_date_only', '-id')
+    )
+    
+    # Search filter
+    if q:
+        consultations = consultations.filter(
+            Q(pdl_profile__username__first_name__icontains=q) |
+            Q(pdl_profile__username__last_name__icontains=q) |
+            Q(physician__username__first_name__icontains=q) |
+            Q(physician__username__last_name__icontains=q) |
+            Q(reason__reason__icontains=q)
+        )
+    
+    # Status filter
+    if status_filter:
+        consultations = consultations.filter(status=status_filter)
+    
+    # Stats
+    total_count = consultations.count()
+    completed_count = consultations.filter(status='completed').count()
+    cancelled_count = consultations.filter(status='cancelled').count()
+    scheduled_count = consultations.filter(status='scheduled').count()
+    
+    # Pagination
+    paginator = Paginator(consultations, 15)  # 15 per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'consultations': page_obj,
+        'page_obj': page_obj,
+        'q': q,
+        'status_filter': status_filter,
+        'stats': {
+            'total': total_count,
+            'completed': completed_count,
+            'cancelled': cancelled_count,
+            'scheduled': scheduled_count,
+        }
+    }
+    return render(request, 'consultations/consultation_history.html', context)
