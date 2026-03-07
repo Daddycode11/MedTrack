@@ -524,64 +524,7 @@ def admin_user_history(request, pk):
     if request.GET.get('export') == 'excel':
         output = BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            # Consultations sheet
-            if consultations:
-                consult_data = [{
-                    'Date': c.consultation_date_date_only,
-                    'PDL': str(c.pdl_profile),
-                    'Reason': str(c.reason) if c.reason else '',
-                    'Location': str(c.location) if c.location else '',
-                    'Status': c.get_status_display(),
-                } for c in consultations]
-                pd.DataFrame(consult_data).to_excel(writer, sheet_name='Consultations', index=False)
-            
-            # Prescriptions Written sheet
-            if prescriptions_written:
-                rx_written_data = [{
-                    'Date': rx.created_at.date() if rx.created_at else '',
-                    'PDL': str(rx.pdl_profile),
-                    'Medication': rx.medication.name if rx.medication else '',
-                    'Dosage': rx.dosage,
-                    'Frequency': rx.frequency,
-                    'Quantity': rx.quantity_prescribed,
-                    'Status': rx.get_status_display(),
-                } for rx in prescriptions_written]
-                pd.DataFrame(rx_written_data).to_excel(writer, sheet_name='Prescriptions Written', index=False)
-            
-            # Prescriptions Dispensed sheet
-            if prescriptions_dispensed:
-                rx_disp_data = [{
-                    'Dispensed At': rx.dispensed_at if rx.dispensed_at else '',
-                    'PDL': str(rx.pdl_profile),
-                    'Medication': rx.medication.name if rx.medication else '',
-                    'Quantity Dispensed': rx.quantity_dispensed,
-                    'Status': rx.get_status_display(),
-                } for rx in prescriptions_dispensed]
-                pd.DataFrame(rx_disp_data).to_excel(writer, sheet_name='Prescriptions Dispensed', index=False)
-            
-            # Inventory Transactions sheet
-            if inventory_transactions:
-                inv_data = [{
-                    'Timestamp': txn.timestamp,
-                    'Medication': txn.inventory.medication.name if txn.inventory and txn.inventory.medication else '',
-                    'Type': txn.get_transaction_type_display(),
-                    'Quantity Change': txn.quantity_change,
-                    'Notes': txn.notes or '',
-                } for txn in inventory_transactions]
-                pd.DataFrame(inv_data).to_excel(writer, sheet_name='Inventory Transactions', index=False)
-            
-            # Health Conditions sheet
-            if health_conditions_recorded:
-                hc_data = [{
-                    'Date Recorded': hc.created_at.date() if hc.created_at else '',
-                    'PDL': str(hc.pdl_profile),
-                    'Condition': hc.get_condition_display(),
-                    'Date Diagnosed': hc.date_diagnosed or '',
-                    'Active': 'Yes' if hc.is_active else 'No',
-                } for hc in health_conditions_recorded]
-                pd.DataFrame(hc_data).to_excel(writer, sheet_name='Health Conditions', index=False)
-            
-            # Summary sheet
+            # Summary sheet (always first)
             summary_data = [{
                 'Category': 'Consultations Conducted',
                 'Count': summary['consultations'],
@@ -599,6 +542,73 @@ def admin_user_history(request, pk):
                 'Count': summary['health_conditions'],
             }]
             pd.DataFrame(summary_data).to_excel(writer, sheet_name='Summary', index=False)
+            
+            # Consultations sheet
+            if consultations:
+                consult_data = [{
+                    'Date': c.consultation_date_date_only,
+                    'PDL': str(c.pdl_profile),
+                    'Reason': str(c.reason) if c.reason else '',
+                    'Location': str(c.location) if c.location else '',
+                    'Status': c.get_status_display(),
+                } for c in consultations]
+            else:
+                consult_data = [{'Date': '', 'PDL': '', 'Reason': '', 'Location': '', 'Status': 'No data'}]
+            pd.DataFrame(consult_data).to_excel(writer, sheet_name='Consultations', index=False)
+            
+            # Prescriptions Written sheet
+            if prescriptions_written:
+                rx_written_data = [{
+                    'Date': rx.created_at.date() if rx.created_at else '',
+                    'PDL': str(rx.pdl_profile),
+                    'Medication': rx.medication.name if rx.medication else '',
+                    'Dosage': rx.dosage,
+                    'Frequency': rx.frequency,
+                    'Quantity': rx.quantity_prescribed,
+                    'Status': rx.get_status_display(),
+                } for rx in prescriptions_written]
+            else:
+                rx_written_data = [{'Date': '', 'PDL': '', 'Medication': '', 'Dosage': '', 'Frequency': '', 'Quantity': '', 'Status': 'No data'}]
+            pd.DataFrame(rx_written_data).to_excel(writer, sheet_name='Prescriptions Written', index=False)
+            
+            # Prescriptions Dispensed sheet
+            if prescriptions_dispensed:
+                rx_disp_data = [{
+                    'Dispensed At': rx.dispensed_at if rx.dispensed_at else '',
+                    'PDL': str(rx.pdl_profile),
+                    'Medication': rx.medication.name if rx.medication else '',
+                    'Quantity Dispensed': rx.quantity_dispensed,
+                    'Status': rx.get_status_display(),
+                } for rx in prescriptions_dispensed]
+            else:
+                rx_disp_data = [{'Dispensed At': '', 'PDL': '', 'Medication': '', 'Quantity Dispensed': '', 'Status': 'No data'}]
+            pd.DataFrame(rx_disp_data).to_excel(writer, sheet_name='Prescriptions Dispensed', index=False)
+            
+            # Inventory Transactions sheet
+            if inventory_transactions:
+                inv_data = [{
+                    'Timestamp': txn.timestamp,
+                    'Medication': txn.inventory.medication.name if txn.inventory and txn.inventory.medication else '',
+                    'Type': txn.get_transaction_type_display(),
+                    'Quantity Change': txn.quantity_change,
+                    'Notes': txn.notes or '',
+                } for txn in inventory_transactions]
+            else:
+                inv_data = [{'Timestamp': '', 'Medication': '', 'Type': '', 'Quantity Change': '', 'Notes': 'No data'}]
+            pd.DataFrame(inv_data).to_excel(writer, sheet_name='Inventory Transactions', index=False)
+            
+            # Health Conditions sheet
+            if health_conditions_recorded:
+                hc_data = [{
+                    'Date Recorded': hc.created_at.date() if hc.created_at else '',
+                    'PDL': str(hc.pdl_profile),
+                    'Condition': hc.get_condition_display(),
+                    'Date Diagnosed': hc.date_diagnosed or '',
+                    'Active': 'Yes' if hc.is_active else 'No',
+                } for hc in health_conditions_recorded]
+            else:
+                hc_data = [{'Date Recorded': '', 'PDL': '', 'Condition': '', 'Date Diagnosed': '', 'Active': 'No data'}]
+            pd.DataFrame(hc_data).to_excel(writer, sheet_name='Health Conditions', index=False)
         
         output.seek(0)
         filename = f"user_history_{target_user.username}.xlsx"
