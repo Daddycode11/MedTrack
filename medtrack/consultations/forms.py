@@ -4,6 +4,26 @@ from pdl.models import PDLProfile
 from consultations.models import Physician, ConsultationLocation, ConsultationReason
 
 class ScheduleConsultationForm(forms.ModelForm):
+    # Explicitly define ForeignKey fields to ensure dropdown options are populated
+    pdl_profile = forms.ModelChoiceField(
+        queryset=PDLProfile.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'pdlSelect'}),
+        label="PDL Profile",
+        required=True
+    )
+    physician = forms.ModelChoiceField(
+        queryset=Physician.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'physicianSelect'}),
+        label="Physician",
+        required=True
+    )
+    reason = forms.ModelChoiceField(
+        queryset=ConsultationReason.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'reasonSelect'}),
+        label="Reason",
+        required=True
+    )
+    
     class Meta:
         model = Consultation
         fields = [
@@ -31,9 +51,6 @@ class ScheduleConsultationForm(forms.ModelForm):
             'fr_conclusion','fr_other_impressions','fr_recommendation',
         ]
         widgets = {
-            'pdl_profile': forms.Select(attrs={'class':'form-select', 'id':'pdlSelect'}),
-            'physician': forms.Select(attrs={'class':'form-select', 'id':'physicianSelect'}),
-            'reason': forms.Select(attrs={'class':'form-select', 'id':'reasonSelect'}),
             'consultation_date_date_only': forms.DateInput(attrs={'class':'form-control','type':'date','id':'consultationDate'}),
             'consultation_time_block': forms.Select(attrs={'class':'form-select','id':'timeSelect'}),
             'is_an_emergency': forms.CheckboxInput(attrs={'class':'form-check-input','id':'isEmergency'}),
