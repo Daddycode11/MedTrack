@@ -459,3 +459,195 @@ def inventory_report(request):
         'dispensed_map': dispensed_map,
         'today':       today,
     })
+
+
+# ── Health Monitoring Dashboard ─────────────────────────────────────────────
+
+@login_required
+def health_monitoring_dashboard(request):
+    """
+    Comprehensive health monitoring statistics dashboard showing:
+    - Total PDLs with illnesses
+    - Types of illnesses recorded
+    - Most commonly prescribed medicines
+    - Total patients per illness
+    """
+    from django.db.models import Count, Sum, F
+    from collections import defaultdict
+    import pandas as pd
+    from io import BytesIO
+    
+    today = localdate()
+    
+    # Total PDLs with health conditions
+    total_pdls_with_conditions = (
+        HealthCondition.objects
+        .filter(is_active=True)
+        .values('pdl_profile')
+        .distinct()
+        .count()
+    )
+    
+    # Total PDLs in the system
+    total_pdls = PDLProfile.objects.count()
+    
+    # Health conditions breakdown (patients per illness type)
+    condition_stats = (
+        HealthCondition.objects
+        .filter(is_active=True)
+        .values('condition')
+        .annotate(
+            patient_count=Count('pdl_profile', distinct=True),
+            total_cases=Count('id')
+        )
+        .order_by('-patient_count')
+    )
+    
+    # Map condition codes to display names
+    condition_choices = dict(HealthCondition.CONDITION_CHOICES)
+    illness_breakdown = []
+    for stat in condition_stats:
+        illness_breakdown.append({
+            'code': stat['condition'],
+            'name': condition_choices.get(stat['condition'], stat['condition']),
+            'patient_count': stat['patient_count'],
+            'total_cases': stat['total_cases'],
+        })
+    
+    # Most commonly prescribed medications
+    top_medications = (
+        MedicationPrescription.objects
+        .values('medication__id', 'medication__name', 'medication__generic_name__name')
+        .annotate(
+            prescription_count=Count('id'),
+            total_patients=Count('pdl_profile', distinct=True),
+            total_dispensed=Sum('quantity_dispensed'),
+        )
+        .order_by('-prescription_count')[:10]
+    )
+    
+    medications_list = []
+    for med in top_medications:
+        medications_list.append({
+            'name': med['medication__name'],
+            'generic_name': med['medication__generic_name__name'] or '',
+            'prescription_count': med['prescription_count'],
+            'total_patients': med['total_patients'],
+            'total_dispensed': med['total_dispensed'] or 0,
+        })
+    
+    # PDLs with multiple conditions
+    multi_condition_count = (
+        HealthCondition.objects
+        .filter(is_active=True)
+        .values('pdl_profile')
+        .annotate(cond_count=Count('condition', distinct=True))
+        .filter(cond_count__gte=2)
+        .count()
+    )
+    
+    # Recent health conditions (last 30 days)
+    from datetime import timedelta
+    thirty_days_ago = today - timedelta(days=30)
+    recent_conditions = (
+        HealthCondition.objects
+        .filter(created_at__date__gte=thirty_days_ago)
+        .count()
+    )
+    
+    # Consultation statistics with health-related reasons
+    consultation_stats = {
+        'total': Consultation.objects.count(),
+        'with_conditions': Consultation.objects.filter(
+            pdl_profile__health_conditions__is_active=True
+        ).distinct().count(),
+        'emergency': Consultation.objects.filter(is_an_emergency=True).count(),
+    }
+    
+    # Monthly health condition trends (last 6 months)
+    from django.db.models.functions import TruncMonth
+    monthly_trends = (
+        HealthCondition.objects
+        .filter(created_at__date__gte=today - timedelta(days=180))
+        .annotate(month=TruncMonth('created_at'))
+        .values('month')
+        .annotate(count=Count('id'))
+        .order_by('month')
+    )
+    
+    trends_data = list(monthly_trends)
+    
+    # Excel export
+    if request.GET.get('export') == 'excel':
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            # Summary sheet
+            summary_data = [{
+                'Metric': 'Total PDLs in System',
+                'Value': total_pdls,
+            }, {
+                'Metric': 'PDLs with Health Conditions',
+                'Value': total_pdls_with_conditions,
+            }, {
+                'Metric': 'PDLs with Multiple Conditions',
+                'Value': multi_condition_count,
+            }, {
+                'Metric': 'New Conditions (Last 30 Days)',
+                'Value': recent_conditions,
+            }, {
+                'Metric': 'Total Consultations',
+                'Value': consultation_stats['total'],
+            }, {
+                'Metric': 'Emergency Consultations',
+                'Value': consultation_stats['emergency'],
+            }]
+            pd.DataFrame(summary_data).to_excel(writer, sheet_name='Summary', index=False)
+            
+            # Illness breakdown sheet
+            if illness_breakdown:
+                illness_data = [{
+                    'Condition Code': i['code'],
+                    'Condition Name': i['name'],
+                    'Number of Patients': i['patient_count'],
+                    'Total Cases': i['total_cases'],
+                } for i in illness_breakdown]
+                pd.DataFrame(illness_data).to_excel(writer, sheet_name='Illnesses by Type', index=False)
+            
+            # Top medications sheet
+            if medications_list:
+                med_data = [{
+                    'Medication': m['name'],
+                    'Generic Name': m['generic_name'],
+                    'Times Prescribed': m['prescription_count'],
+                    'Patients Treated': m['total_patients'],
+                    'Total Dispensed': m['total_dispensed'],
+                } for m in medications_list]
+                pd.DataFrame(med_data).to_excel(writer, sheet_name='Top Medications', index=False)
+            
+            # Monthly trends sheet
+            if trends_data:
+                trend_rows = [{
+                    'Month': t['month'].strftime('%Y-%m') if t['month'] else '',
+                    'New Conditions': t['count'],
+                } for t in trends_data]
+                pd.DataFrame(trend_rows).to_excel(writer, sheet_name='Monthly Trends', index=False)
+        
+        output.seek(0)
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="health_monitoring_statistics.xlsx"'
+        return response
+    
+    return render(request, 'reports/health_monitoring_dashboard.html', {
+        'today': today,
+        'total_pdls': total_pdls,
+        'total_pdls_with_conditions': total_pdls_with_conditions,
+        'multi_condition_count': multi_condition_count,
+        'recent_conditions': recent_conditions,
+        'illness_breakdown': illness_breakdown,
+        'medications_list': medications_list,
+        'consultation_stats': consultation_stats,
+        'trends_data': trends_data,
+    })

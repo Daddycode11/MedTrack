@@ -169,6 +169,18 @@
       </div>
     </div>
 
+    <!-- Quick Links to Other Reports -->
+    <div class="export-bar mb-3" style="background:#e8f5e9; border-color:#c8e6c9;">
+      <strong><i class="bi bi-grid-3x3-gap me-1" style="color:#10b981;"></i>Health Reports:</strong>
+      <a href="{% url 'reports:health_monitoring_dashboard' %}" style="color:#10b981;"><i class="bi bi-activity me-1"></i>Health Monitoring Statistics</a>
+      <span>|</span>
+      <a href="{% url 'reports:health_conditions' %}"><i class="bi bi-heart-pulse me-1"></i>Health Conditions</a>
+      <span>|</span>
+      <a href="{% url 'reports:fast_moving_medications' %}"><i class="bi bi-capsule me-1"></i>Fast-Moving Medications</a>
+      <span>|</span>
+      <a href="{% url 'reports:inventory_report' %}"><i class="bi bi-box-seam me-1"></i>Inventory Report</a>
+    </div>
+
     <div class="export-bar">
       <strong><i class="bi bi-download me-1"></i>Export CSV:</strong>
       <a href="?export=csv&period=week"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Weekly</a>

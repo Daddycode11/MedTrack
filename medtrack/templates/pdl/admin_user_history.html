@@ -112,9 +112,14 @@
         </div>
       </div>
     </div>
-    <a href="{% url 'pdl:admin_dashboard' %}" class="btn btn-sm btn-outline-secondary">
-      <i class="bi bi-arrow-left me-1"></i> Back to Admin Panel
-    </a>
+    <div class="d-flex gap-2">
+      <a href="?export=excel" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
+      </a>
+      <a href="{% url 'pdl:admin_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back to Admin Panel
+      </a>
+    </div>
   </div>
 
   <!-- ── SUMMARY STATS ────────────────────────────── -->

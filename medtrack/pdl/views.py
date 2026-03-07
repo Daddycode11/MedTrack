@@ -120,7 +120,7 @@ def pdl_profile(request, username):
 #  ADD PDL
 # ─────────────────────────────────────────────────────────────
 
-@role_required('admin', 'staff', 'doctor')
+@role_required('doctor')
 @transaction.atomic
 def add_pdl(request):
     """
@@ -447,6 +447,9 @@ def admin_user_history(request, pk):
     """Show full activity history for a system user."""
     from consultations.models import Physician, Consultation
     from medications.models import MedicationPrescription, InventoryTransaction, Pharmacist
+    from django.http import HttpResponse
+    import pandas as pd
+    from io import BytesIO
 
     target_user = get_object_or_404(User, pk=pk)
 
@@ -465,7 +468,7 @@ def admin_user_history(request, pk):
     # Consultations conducted (if doctor)
     consultations = []
     if physician:
-        consultations = (
+        consultations = list(
             Consultation.objects
             .filter(physician=physician)
             .select_related('pdl_profile__username', 'reason', 'location')
@@ -475,7 +478,7 @@ def admin_user_history(request, pk):
     # Prescriptions written (if doctor)
     prescriptions_written = []
     if physician:
-        prescriptions_written = (
+        prescriptions_written = list(
             MedicationPrescription.objects
             .filter(prescribed_by=physician)
             .select_related('pdl_profile__username', 'medication')
@@ -485,7 +488,7 @@ def admin_user_history(request, pk):
     # Prescriptions dispensed (if pharmacist)
     prescriptions_dispensed = []
     if pharmacist:
-        prescriptions_dispensed = (
+        prescriptions_dispensed = list(
             MedicationPrescription.objects
             .filter(dispensed_by=pharmacist)
             .select_related('pdl_profile__username', 'medication')
@@ -493,7 +496,7 @@ def admin_user_history(request, pk):
         )
 
     # Inventory transactions
-    inventory_transactions = (
+    inventory_transactions = list(
         InventoryTransaction.objects
         .filter(performed_by=target_user)
         .select_related('inventory__medication')
@@ -501,7 +504,7 @@ def admin_user_history(request, pk):
     )
 
     # Health conditions recorded
-    health_conditions_recorded = (
+    health_conditions_recorded = list(
         HealthCondition.objects
         .filter(recorded_by=target_user)
         .select_related('pdl_profile__username')
@@ -513,9 +516,98 @@ def admin_user_history(request, pk):
         'consultations':            len(consultations),
         'prescriptions_written':    len(prescriptions_written),
         'prescriptions_dispensed':  len(prescriptions_dispensed),
-        'inventory_transactions':   inventory_transactions.count(),
-        'health_conditions':        health_conditions_recorded.count(),
+        'inventory_transactions':   len(inventory_transactions),
+        'health_conditions':        len(health_conditions_recorded),
     }
+
+    # Excel export
+    if request.GET.get('export') == 'excel':
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            # Consultations sheet
+            if consultations:
+                consult_data = [{
+                    'Date': c.consultation_date_date_only,
+                    'PDL': str(c.pdl_profile),
+                    'Reason': str(c.reason) if c.reason else '',
+                    'Location': str(c.location) if c.location else '',
+                    'Status': c.get_status_display(),
+                } for c in consultations]
+                pd.DataFrame(consult_data).to_excel(writer, sheet_name='Consultations', index=False)
+            
+            # Prescriptions Written sheet
+            if prescriptions_written:
+                rx_written_data = [{
+                    'Date': rx.created_at.date() if rx.created_at else '',
+                    'PDL': str(rx.pdl_profile),
+                    'Medication': rx.medication.name if rx.medication else '',
+                    'Dosage': rx.dosage,
+                    'Frequency': rx.frequency,
+                    'Quantity': rx.quantity_prescribed,
+                    'Status': rx.get_status_display(),
+                } for rx in prescriptions_written]
+                pd.DataFrame(rx_written_data).to_excel(writer, sheet_name='Prescriptions Written', index=False)
+            
+            # Prescriptions Dispensed sheet
+            if prescriptions_dispensed:
+                rx_disp_data = [{
+                    'Dispensed At': rx.dispensed_at if rx.dispensed_at else '',
+                    'PDL': str(rx.pdl_profile),
+                    'Medication': rx.medication.name if rx.medication else '',
+                    'Quantity Dispensed': rx.quantity_dispensed,
+                    'Status': rx.get_status_display(),
+                } for rx in prescriptions_dispensed]
+                pd.DataFrame(rx_disp_data).to_excel(writer, sheet_name='Prescriptions Dispensed', index=False)
+            
+            # Inventory Transactions sheet
+            if inventory_transactions:
+                inv_data = [{
+                    'Timestamp': txn.timestamp,
+                    'Medication': txn.inventory.medication.name if txn.inventory and txn.inventory.medication else '',
+                    'Type': txn.get_transaction_type_display(),
+                    'Quantity Change': txn.quantity_change,
+                    'Notes': txn.notes or '',
+                } for txn in inventory_transactions]
+                pd.DataFrame(inv_data).to_excel(writer, sheet_name='Inventory Transactions', index=False)
+            
+            # Health Conditions sheet
+            if health_conditions_recorded:
+                hc_data = [{
+                    'Date Recorded': hc.created_at.date() if hc.created_at else '',
+                    'PDL': str(hc.pdl_profile),
+                    'Condition': hc.get_condition_display(),
+                    'Date Diagnosed': hc.date_diagnosed or '',
+                    'Active': 'Yes' if hc.is_active else 'No',
+                } for hc in health_conditions_recorded]
+                pd.DataFrame(hc_data).to_excel(writer, sheet_name='Health Conditions', index=False)
+            
+            # Summary sheet
+            summary_data = [{
+                'Category': 'Consultations Conducted',
+                'Count': summary['consultations'],
+            }, {
+                'Category': 'Prescriptions Written',
+                'Count': summary['prescriptions_written'],
+            }, {
+                'Category': 'Prescriptions Dispensed',
+                'Count': summary['prescriptions_dispensed'],
+            }, {
+                'Category': 'Inventory Transactions',
+                'Count': summary['inventory_transactions'],
+            }, {
+                'Category': 'Health Conditions Recorded',
+                'Count': summary['health_conditions'],
+            }]
+            pd.DataFrame(summary_data).to_excel(writer, sheet_name='Summary', index=False)
+        
+        output.seek(0)
+        filename = f"user_history_{target_user.username}.xlsx"
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
     return render(request, 'pdl/admin_user_history.html', {
         'target_user':               target_user,

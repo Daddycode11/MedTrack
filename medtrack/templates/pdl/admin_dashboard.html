@@ -242,10 +242,12 @@
             <!-- Actions -->
             <td style="text-align:right; padding-right:1.25rem;">
               <div class="d-flex gap-1 justify-content-end">
-                <!-- View history (all users) -->
+                <!-- View history (exclude pharmacist) -->
+                {% if u.userprofile.role != 'pharmacist' %}
                 <a href="{% url 'pdl:admin_user_history' u.pk %}" class="act-btn" title="View Activity History" style="text-decoration:none;">
                   <i class="bi bi-clock-history"></i>
                 </a>
+                {% endif %}
                 {% if not u.is_superuser %}
                 <button class="act-btn" style="color:#f59e0b;"
                   title="Reset Password"
