@@ -149,7 +149,7 @@ def medication_inventory_list(request):
     
     return render(request, 'medications/inventory_list.html', context)
 
-@role_required('admin', 'pharmacist')
+@role_required('admin', 'pharmacist', 'doctor')
 def medication_add(request):
     """
     Add a new medication with initial inventory.
@@ -210,7 +210,7 @@ def medication_detail(request, pk):
         'transactions': transactions,
     })
 
-@role_required('admin', 'pharmacist')
+@role_required('admin', 'pharmacist', 'doctor')
 def medication_update_inventory(request, pk):
     """
     Update medication inventory.
@@ -365,3 +365,76 @@ def prescription_update(request, pk):
         "title": "Edit Prescription"
         
     })
+
+
+# ─────────────────────────────────────────────────────────────
+#  MEDICATION CRUD (for Doctor)
+# ─────────────────────────────────────────────────────────────
+
+@role_required('admin', 'pharmacist', 'doctor')
+def medication_edit(request, pk):
+    """
+    Edit an existing medication and its inventory.
+    """
+    medication = get_object_or_404(Medication, pk=pk)
+    inventory = medication.medicationinventory_set.first()
+    
+    if request.method == 'POST':
+        med_form = MedicationForm(request.POST, instance=medication)
+        inv_form = MedicationInventoryForm(request.POST, instance=inventory) if inventory else MedicationInventoryForm(request.POST)
+        
+        if med_form.is_valid() and inv_form.is_valid():
+            medication = med_form.save()
+            
+            if inventory:
+                inv_form.save()
+            else:
+                # Create new inventory if none exists
+                inventory = inv_form.save(commit=False)
+                inventory.medication = medication
+                inventory.save()
+            
+            messages.success(request, f'Medication "{medication.name}" updated successfully!')
+            return redirect('medications:medication_detail', pk=pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        med_form = MedicationForm(instance=medication)
+        inv_form = MedicationInventoryForm(instance=inventory) if inventory else MedicationInventoryForm()
+    
+    return render(request, 'medications/medication_form.html', {
+        'med_form': med_form,
+        'inv_form': inv_form,
+        'title': f'Edit Medication: {medication.name}',
+        'medication': medication,
+        'is_edit': True
+    })
+
+
+@role_required('admin', 'pharmacist', 'doctor')
+@require_POST
+def medication_delete(request, pk):
+    """
+    Delete a medication and its associated inventory.
+    """
+    medication = get_object_or_404(Medication, pk=pk)
+    name = medication.name
+    
+    try:
+        # Check if there are any prescriptions using this medication
+        prescription_count = MedicationPrescription.objects.filter(medication=medication).count()
+        if prescription_count > 0:
+            messages.error(
+                request, 
+                f'Cannot delete "{name}". It has {prescription_count} associated prescription(s). '
+                f'Please delete or reassign the prescriptions first.'
+            )
+            return redirect('medications:medication_detail', pk=pk)
+        
+        medication.delete()
+        messages.success(request, f'Medication "{name}" has been deleted successfully.')
+    except Exception as e:
+        messages.error(request, f'Error deleting medication: {str(e)}')
+        return redirect('medications:medication_detail', pk=pk)
+    
+    return redirect('medications:inventory_list')

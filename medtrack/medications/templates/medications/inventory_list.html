@@ -159,6 +159,10 @@
                                        class="btn btn-warning" title="Update Stock">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
+                                    <a href="{% url 'medications:medication_edit' medication.id %}" 
+                                       class="btn btn-primary" title="Edit Medication">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
                                     <a href="{% url 'medications:medication_history' medication.id %}" 
                                        class="btn btn-secondary" title="View History">
                                         <i class="bi bi-clock-history"></i>

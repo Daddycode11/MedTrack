@@ -13,6 +13,8 @@ urlpatterns = [
     path('inventory/<int:pk>/', views.medication_detail, name='medication_detail'),
     path('inventory/<int:pk>/update/', views.medication_update_inventory, name='update_inventory'),
     path('inventory/<int:pk>/history/', views.medication_history, name='medication_history'),
+    path('inventory/<int:pk>/edit/', views.medication_edit, name='medication_edit'),
+    path('inventory/<int:pk>/delete/', views.medication_delete, name='medication_delete'),
     
     # Prescription management
     path('prescription/create/', views.prescription_create, name='prescription_create'),

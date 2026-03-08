@@ -67,12 +67,6 @@
             {{ form.quantity_dispensed }}
             {% if form.quantity_dispensed.errors %}<div class="text-danger small">{{ form.quantity_dispensed.errors }}</div>{% endif %}
           </div>
-
-          <div class="col-md-3">
-            <label class="form-label">{{ form.status.label }}</label>
-            {{ form.status }}
-            {% if form.status.errors %}<div class="text-danger small">{{ form.status.errors }}</div>{% endif %}
-          </div>
         </div>
       </div>
       <div class="card-footer d-flex justify-content-end gap-2">
