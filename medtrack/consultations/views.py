@@ -324,7 +324,7 @@ def reschedule_consultation(request, consultation_id):
 
 @role_required('admin', 'staff', 'doctor')
 def complete_consultation(request, consultation_id):
-    """Confirm then mark a consultation as completed and schedule follow-up."""
+    """Mark a consultation as completed. Doctor can optionally add a follow-up."""
     consultation = get_object_or_404(
         Consultation.objects.select_related('physician'), id=consultation_id
     )
@@ -347,14 +347,17 @@ def complete_consultation(request, consultation_id):
 
         consultation.save()
         
-        # Auto-schedule follow-up consultation after 7 days
-        followup_days = getattr(consultation, 'followup_days', 7) or 7
-        followup_date = consultation.consultation_date_date_only + timedelta(days=followup_days)
+        # Check if doctor wants to add a follow-up consultation
+        add_followup = request.POST.get('add_followup') == '1'
         
-        # Check if a follow-up already exists for this consultation
-        if not consultation.followup_scheduled:
+        if add_followup and not consultation.followup_scheduled:
+            # Get follow-up details from form
+            followup_days = int(request.POST.get('followup_days', 7) or 7)
+            followup_date = consultation.consultation_date_date_only + timedelta(days=followup_days)
+            followup_notes = request.POST.get('followup_notes', '').strip()
+            
             try:
-                # Get a "Follow-up" reason or use the same reason
+                # Get a "Follow-up" reason
                 followup_reason, _ = ConsultationReason.objects.get_or_create(
                     reason="Follow-up Consultation",
                     defaults={"description": "Scheduled follow-up consultation"}
@@ -371,7 +374,7 @@ def complete_consultation(request, consultation_id):
                     status='scheduled',
                     is_followup=True,
                     parent_consultation=consultation,
-                    notes=f"Follow-up for consultation on {consultation.consultation_date_date_only}",
+                    notes=followup_notes or f"Follow-up for consultation on {consultation.consultation_date_date_only}",
                 )
                 
                 # Mark the original consultation as having a follow-up scheduled
@@ -383,8 +386,7 @@ def complete_consultation(request, consultation_id):
                     f"Follow-up consultation scheduled for {followup_date.strftime('%B %d, %Y')}."
                 )
             except Exception as e:
-                # If follow-up creation fails (e.g., due to unique constraint), just log it
-                messages.warning(request, f"Could not auto-schedule follow-up: {e}")
+                messages.warning(request, f"Could not schedule follow-up: {e}")
         
         messages.success(
             request,
