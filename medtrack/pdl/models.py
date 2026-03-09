@@ -169,14 +169,13 @@ class DetentionReason(models.Model):
 
 class UserRole(models.TextChoices):
     ADMIN       = 'admin',       'Admin'
-    STAFF       = 'staff',       'Staff'
     DOCTOR      = 'doctor',      'Doctor / Nurse'
     PHARMACIST  = 'pharmacist',  'Pharmacist'
 
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile')
-    role = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.STAFF)
+    role = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.DOCTOR)
 
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} ({self.get_role_display()})"

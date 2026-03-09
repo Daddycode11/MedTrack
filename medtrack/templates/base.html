@@ -149,7 +149,6 @@
       }
       .role-admin  { background: #dc3545; color: #fff; }
       .role-doctor { background: #0d6efd; color: #fff; }
-      .role-staff  { background: var(--emerald); color: #fff; }
 
       /* icon buttons */
       .nav-icon-btn {
@@ -381,8 +380,8 @@
     <div class="user-pill d-none d-lg-flex">
       <div class="user-avatar">{{ user.get_full_name|default:user.username|slice:":1"|upper }}</div>
       <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
-      <span class="role-chip {% if user.is_superuser or user_role == 'admin' %}role-admin{% elif user_role == 'doctor' %}role-doctor{% elif user_role == 'pharmacist' %}role-pharmacist{% else %}role-staff{% endif %}">
-        {% if user.is_superuser %}ADMIN{% elif user_role == 'admin' %}ADMIN{% elif user_role == 'doctor' %}DOCTOR{% elif user_role == 'pharmacist' %}RX{% else %}STAFF{% endif %}
+      <span class="role-chip {% if user.is_superuser or user_role == 'admin' %}role-admin{% elif user_role == 'doctor' %}role-doctor{% elif user_role == 'pharmacist' %}role-pharmacist{% else %}role-doctor{% endif %}">
+        {% if user.is_superuser %}ADMIN{% elif user_role == 'admin' %}ADMIN{% elif user_role == 'doctor' %}DOCTOR{% elif user_role == 'pharmacist' %}RX{% else %}USER{% endif %}
       </span>
     </div>
 
@@ -414,11 +413,11 @@
         {% elif user_role == 'admin' %}Administrator
         {% elif user_role == 'doctor' %}Doctor
         {% elif user_role == 'pharmacist' %}Pharmacist
-        {% else %}Staff{% endif %}
+        {% else %}User{% endif %}
       </div>
     </div>
-    <span class="role-chip {% if user.is_superuser or user_role == 'admin' %}role-admin{% elif user_role == 'doctor' %}role-doctor{% elif user_role == 'pharmacist' %}role-pharmacist{% else %}role-staff{% endif %}">
-      {% if user.is_superuser %}ADMIN{% elif user_role == 'admin' %}ADMIN{% elif user_role == 'doctor' %}DOC{% elif user_role == 'pharmacist' %}RX{% else %}STAFF{% endif %}
+    <span class="role-chip {% if user.is_superuser or user_role == 'admin' %}role-admin{% elif user_role == 'doctor' %}role-doctor{% elif user_role == 'pharmacist' %}role-pharmacist{% else %}role-doctor{% endif %}">
+      {% if user.is_superuser %}ADMIN{% elif user_role == 'admin' %}ADMIN{% elif user_role == 'doctor' %}DOC{% elif user_role == 'pharmacist' %}RX{% else %}USER{% endif %}
     </span>
   </div>
 

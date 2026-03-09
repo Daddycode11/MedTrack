@@ -183,7 +183,7 @@ def doctor_dashboard(request):
 #  SCHEDULE / CREATE
 # ─────────────────────────────────────────────────────────────
 
-@role_required('admin', 'staff', 'doctor')
+@role_required('admin', 'doctor')
 def schedule_consultation(request):
     """Simple function-based create view (legacy; prefer ConsultationCreateView)."""
     if request.method == 'POST':
@@ -198,7 +198,7 @@ def schedule_consultation(request):
     return render(request, 'consultations/schedule_consultation.html', {'form': form})
 
 
-@role_required('admin', 'staff', 'doctor')
+@role_required('admin', 'doctor')
 def create_consultation(request):
     """JSON-driven create endpoint (called from the calendar quick-add form)."""
     if request.method == 'POST':
@@ -278,7 +278,7 @@ class ConsultationCreateView(CreateView):
 #  CANCEL / RESCHEDULE / COMPLETE
 # ─────────────────────────────────────────────────────────────
 
-@role_required('admin', 'staff', 'doctor')
+@role_required('admin', 'doctor')
 def cancel_consultation(request, consultation_id):
     """Confirm then cancel a consultation."""
     consultation = get_object_or_404(
@@ -298,7 +298,7 @@ def cancel_consultation(request, consultation_id):
     return render(request, 'consultations/cancel_consultation.html', {'consultation': consultation})
 
 
-@role_required('admin', 'staff', 'doctor')
+@role_required('admin', 'doctor')
 def reschedule_consultation(request, consultation_id):
     """Confirm then reschedule a consultation."""
     consultation = get_object_or_404(Consultation, id=consultation_id)
@@ -322,7 +322,7 @@ def reschedule_consultation(request, consultation_id):
     )
 
 
-@role_required('admin', 'staff', 'doctor')
+@role_required('admin', 'doctor')
 def complete_consultation(request, consultation_id):
     """Mark a consultation as completed. Doctor can optionally add a follow-up."""
     consultation = get_object_or_404(

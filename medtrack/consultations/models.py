@@ -30,12 +30,13 @@ class Physician(models.Model):
 
     username = models.ForeignKey(User, on_delete=models.CASCADE)
     employee_type = models.CharField(max_length=20, choices=EMPLOYEE_TYPE_CHOICES, default='full_time')
-    specialty = models.ForeignKey(MedicalSpecialty, on_delete=models.CASCADE)
-    phone_number = models.CharField(max_length=15)
-    address = models.CharField(max_length=255)
+    specialty = models.ForeignKey(MedicalSpecialty, on_delete=models.SET_NULL, null=True, blank=True)
+    phone_number = models.CharField(max_length=15, blank=True, default='')
+    address = models.CharField(max_length=255, blank=True, default='')
 
     def __str__(self):
-        return f"{self.username.first_name} {self.username.last_name} ({self.specialty})"
+        specialty_str = f" ({self.specialty})" if self.specialty else ""
+        return f"{self.username.first_name} {self.username.last_name}{specialty_str}"
     class Meta:
         verbose_name = "Physician"
         verbose_name_plural = "Physicians"

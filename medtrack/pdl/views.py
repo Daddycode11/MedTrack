@@ -160,7 +160,7 @@ def add_pdl(request):
 #  EDIT PDL
 # ─────────────────────────────────────────────────────────────
 
-@role_required('admin', 'staff')
+@role_required('admin', 'doctor')
 @transaction.atomic
 def edit_pdl(request, pdl_id):
     """
@@ -199,18 +199,48 @@ def edit_pdl(request, pdl_id):
 #  DELETE PDL
 # ─────────────────────────────────────────────────────────────
 
-@role_required('admin', 'staff')
+@role_required('admin', 'doctor')
 @require_POST
 def delete_pdl(request, pk):
     """
     Deletes a PDL and their associated User account.
+    Cascades to related consultations, prescriptions, health conditions, etc.
     Restricted to POST requests only.
     """
     profile = get_object_or_404(PDLProfile, pk=pk)
-    user    = profile.username
-    profile.delete()
-    user.delete()
-    messages.success(request, "PDL deleted successfully.")
+    pdl_name = str(profile)
+    user = profile.username
+    
+    try:
+        with transaction.atomic():
+            # Get counts of related records for informational message
+            consultation_count = Consultation.objects.filter(pdl_profile=profile).count()
+            prescription_count = MedicationPrescription.objects.filter(pdl_profile=profile).count()
+            health_condition_count = HealthCondition.objects.filter(pdl_profile=profile).count()
+            
+            # Delete the profile (cascades to related records)
+            profile.delete()
+            # Delete the associated user account
+            user.delete()
+            
+            # Build success message with details
+            deleted_items = []
+            if consultation_count > 0:
+                deleted_items.append(f"{consultation_count} consultation(s)")
+            if prescription_count > 0:
+                deleted_items.append(f"{prescription_count} prescription(s)")
+            if health_condition_count > 0:
+                deleted_items.append(f"{health_condition_count} health condition(s)")
+            
+            if deleted_items:
+                messages.success(request, f"PDL '{pdl_name}' and related records ({', '.join(deleted_items)}) deleted successfully.")
+            else:
+                messages.success(request, f"PDL '{pdl_name}' deleted successfully.")
+                
+    except Exception as e:
+        messages.error(request, f"Error deleting PDL '{pdl_name}': {str(e)}. Please contact system administrator.")
+        return redirect('pdl:pdl_list')
+    
     return redirect('pdl:pdl_list')
 
 
@@ -218,7 +248,7 @@ def delete_pdl(request, pk):
 #  HEALTH CONDITIONS
 # ─────────────────────────────────────────────────────────────
 
-@role_required('admin', 'staff', 'doctor')
+@role_required('admin', 'doctor')
 def health_condition_add(request, pdl_id):
     pdl = get_object_or_404(PDLProfile, pk=pdl_id)
     if request.method == 'POST':
@@ -245,7 +275,7 @@ def health_condition_add(request, pdl_id):
     return redirect('pdl:pdl_profile', username=pdl.username.username)
 
 
-@role_required('admin', 'staff', 'doctor')
+@role_required('admin', 'doctor')
 def health_condition_edit(request, pk):
     hc  = get_object_or_404(HealthCondition, pk=pk)
     pdl = hc.pdl_profile
@@ -259,7 +289,7 @@ def health_condition_edit(request, pk):
     return redirect('pdl:pdl_profile', username=pdl.username.username)
 
 
-@role_required('admin', 'staff', 'doctor')
+@role_required('admin', 'doctor')
 @require_POST
 def health_condition_delete(request, pk):
     hc  = get_object_or_404(HealthCondition, pk=pk)
@@ -322,7 +352,6 @@ def admin_dashboard(request):
     stats = {
         'total':      system_users.count(),
         'admin':      system_users.filter(userprofile__role='admin').count(),
-        'staff':      system_users.filter(userprofile__role='staff').count(),
         'doctor':     system_users.filter(userprofile__role='doctor').count(),
         'pharmacist': system_users.filter(userprofile__role='pharmacist').count(),
     }
@@ -351,7 +380,7 @@ def admin_create_user(request):
         last_name  = request.POST.get('last_name', '').strip()
         email      = request.POST.get('email', '').strip()
         password   = request.POST.get('password', '').strip()
-        role       = request.POST.get('role', 'staff')
+        role       = request.POST.get('role', 'doctor')
 
         if not username or not password:
             messages.error(request, 'Username and password are required.')
@@ -369,23 +398,20 @@ def admin_create_user(request):
         profile.role = role
         profile.save()
 
-        # For doctors, also create a Physician record
+        # For doctors, always create a Physician record
         if role == 'doctor':
             specialty_id   = request.POST.get('specialty_id')
             phone_number   = request.POST.get('phone_number', '').strip()
             address        = request.POST.get('address', '').strip()
             employee_type  = request.POST.get('employee_type', 'full_time')
-            specialty = MedicalSpecialty.objects.filter(pk=specialty_id).first()
-            if specialty:
-                Physician.objects.create(
-                    username=user,
-                    specialty=specialty,
-                    phone_number=phone_number,
-                    address=address,
-                    employee_type=employee_type,
-                )
-            else:
-                messages.warning(request, f'Doctor "{username}" created but no specialty was set. Assign one via the Django admin.')
+            specialty = MedicalSpecialty.objects.filter(pk=specialty_id).first() if specialty_id else None
+            Physician.objects.create(
+                username=user,
+                specialty=specialty,
+                phone_number=phone_number,
+                address=address,
+                employee_type=employee_type,
+            )
 
         messages.success(request, f'User "{username}" created with role "{role}".')
     return redirect('pdl:admin_dashboard')
@@ -394,11 +420,17 @@ def admin_create_user(request):
 @role_required('admin')
 @require_POST
 def admin_edit_role(request, pk):
+    from consultations.models import Physician
     user = get_object_or_404(User, pk=pk)
-    role = request.POST.get('role', 'staff')
+    role = request.POST.get('role', 'doctor')
     profile, _ = UserProfile.objects.get_or_create(user=user)
     profile.role = role
     profile.save()
+    
+    # If changing to doctor role, ensure Physician record exists
+    if role == 'doctor' and not Physician.objects.filter(username=user).exists():
+        Physician.objects.create(username=user)
+    
     messages.success(request, f'Role updated for "{user.get_full_name() or user.username}".')
     return redirect('pdl:admin_dashboard')
 
