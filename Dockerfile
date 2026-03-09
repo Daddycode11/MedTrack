@@ -1,29 +1,23 @@
-# Production-ready Dockerfile for Django + Gunicorn
-FROM python:3.11-slim
+FROM python:3.13-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-# Set work directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y build-essential libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY requirements.txt ./
-RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
+# Copy EVERYTHING (manage.py + medtrack folder)
 COPY . .
 
+ENV PYTHONUNBUFFERED=1
+ENV DJANGO_SETTINGS_MODULE=medtrack.settings
+ENV STATIC_ROOT=/app/static
+ENV MEDIA_ROOT=/app/media
 
-
-# Expose port
 EXPOSE 8000
 
-# Start Gunicorn
-CMD ["gunicorn", "medtrack.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && gunicorn medtrack.wsgi:application --bind 0.0.0.0:8000"]
