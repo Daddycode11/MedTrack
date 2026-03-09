@@ -1,6 +1,6 @@
 FROM python:3.13-slim
 
-WORKDIR /app
+WORKDIR /app/medtrack
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -14,9 +14,9 @@ COPY . .
 
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=medtrack.settings
-ENV STATIC_ROOT=/app/static
-ENV MEDIA_ROOT=/app/media
+ENV STATIC_ROOT=/app/medtrack/staticfiles
+ENV MEDIA_ROOT=/app/medtrack/media
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "cd /app/medtrack && python manage.py collectstatic --noinput && gunicorn medtrack.wsgi:application --bind 0.0.0.0:8000"]
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && gunicorn medtrack.wsgi:application --bind 0.0.0.0:8000"]
