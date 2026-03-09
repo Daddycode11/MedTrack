@@ -20,8 +20,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy project files
 COPY . .
 
-# Collect static files (optional, can also be done in entrypoint)
-RUN python manage.py collectstatic --noinput
+
 
 # Expose port
 EXPOSE 8000
