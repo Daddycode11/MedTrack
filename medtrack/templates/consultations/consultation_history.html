@@ -155,7 +155,7 @@
           <option value="">All Status</option>
           <option value="scheduled" {% if status_filter == 'scheduled' %}selected{% endif %}>Scheduled</option>
           <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
-          <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+          <option value="canceled" {% if status_filter == 'canceled' %}selected{% endif %}>Canceled</option>
         </select>
       </div>
       <div class="col-md-4 d-flex gap-2">
@@ -223,8 +223,8 @@
             <td>
               {% if c.status == 'completed' %}
                 <span class="status-badge st-completed"><i class="bi bi-check-circle"></i> Completed</span>
-              {% elif c.status == 'cancelled' %}
-                <span class="status-badge st-cancelled"><i class="bi bi-x-circle"></i> Cancelled</span>
+              {% elif c.status == 'canceled' %}
+                <span class="status-badge st-canceled"><i class="bi bi-x-circle"></i> Canceled</span>
               {% else %}
                 <span class="status-badge st-scheduled"><i class="bi bi-clock"></i> Scheduled</span>
               {% endif %}

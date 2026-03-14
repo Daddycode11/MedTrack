@@ -514,7 +514,7 @@ def consultation_history(request):
     # Stats
     total_count = consultations.count()
     completed_count = consultations.filter(status='completed').count()
-    cancelled_count = consultations.filter(status='cancelled').count()
+    cancelled_count = consultations.filter(status='canceled').count()
     scheduled_count = consultations.filter(status='scheduled').count()
     
     # Pagination
