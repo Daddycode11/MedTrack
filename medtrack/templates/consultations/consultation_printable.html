@@ -178,6 +178,44 @@
     <tr><th>Other Clinical Impressions</th><td colspan="3">{{ c.fr_other_impressions|default:"None" }}</td></tr>
   </table>
 
+  <div class="section-head">V. TB Entry Screening Checklist</div>
+  <table>
+    <tr>
+      <th>Unexplained Cough</th>
+      <td>{{ c.tb_unexplained_cough|yesno:"YES,NO" }}</td>
+      <th>BMI &lt; 18.5</th>
+      <td>{{ c.tb_bmi_less_18_5|yesno:"YES,NO" }}</td>
+    </tr>
+    <tr>
+      <th>Blood-streaked Sputum</th>
+      <td>{{ c.tb_blood_streaked_sputum|yesno:"YES,NO" }}</td>
+      <th>Chest X-ray Suggestive</th>
+      <td>{{ c.tb_cxr_suggestive|yesno:"YES,NO" }}</td>
+    </tr>
+    <tr>
+      <th>Previous TB Treatment</th>
+      <td>{{ c.tb_previous_treatment|yesno:"YES,NO" }}</td>
+      <th>TB Exposure History</th>
+      <td>{{ c.tb_exposure|yesno:"YES,NO" }}</td>
+    </tr>
+  </table>
+
+  <div class="section-head">VI. Follow-up Consultation Info</div>
+  <table>
+    <tr>
+      <th>Is Follow-up Consultation?</th>
+      <td>{{ c.is_followup|yesno:"YES,NO" }}</td>
+      <th>Parent Consultation</th>
+      <td>{% if c.parent_consultation %}{{ c.parent_consultation }}{% else %}None{% endif %}</td>
+    </tr>
+    <tr>
+      <th>Follow-up Scheduled?</th>
+      <td>{{ c.followup_scheduled|yesno:"YES,NO" }}</td>
+      <th>Days Until Follow-up</th>
+      <td>{{ c.followup_days|default:"N/A" }}</td>
+    </tr>
+  </table>
+
   <div class="footer">
     <table class="sig-table">
       <tr>
