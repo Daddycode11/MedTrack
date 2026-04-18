@@ -290,10 +290,12 @@
             <td>{{ hc.get_condition_display }}</td>
             <td>{{ hc.date_diagnosed|date:"M d, Y"|default:"—" }}</td>
             <td>
-              {% if hc.is_active %}
-                <span class="type-badge tb-completed">Active</span>
+              {% if hc.status == 'active' %}
+                <span class="type-badge tb-completed">&#9679; Active</span>
+              {% elif hc.status == 'under_treatment' %}
+                <span class="type-badge" style="background:rgba(255,193,7,.1);color:#b58b00;">&#9679; Under Treatment</span>
               {% else %}
-                <span class="type-badge" style="background:rgba(128,128,128,.1);color:rgba(128,128,128,.7);">Inactive</span>
+                <span class="type-badge" style="background:rgba(25,135,84,.1);color:#198754;">&#9679; Recovered</span>
               {% endif %}
             </td>
           </tr>

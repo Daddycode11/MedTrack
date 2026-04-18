@@ -46,7 +46,12 @@ def pdl_list(request):
                     ~Q(pdl_profile__consultation__status__iexact='Completed')
                 ),
                 distinct=True,
-            )
+            ),
+            active_health_count=Count(
+                'pdl_profile__health_conditions',
+                filter=Q(pdl_profile__health_conditions__status='active'),
+                distinct=True,
+            ),
         )
         .order_by('-created_at')
     )
@@ -55,10 +60,11 @@ def pdl_list(request):
     qs = pdl_filter.qs
 
     summary = {
-        'total_pdl_rows':   qs.count(),
-        'total_consults':   qs.filter(consult_count__gt=0).count(),
-        'male_consulted':   qs.filter(pdl_profile__sex='M', consult_count__gt=0).count(),
-        'female_consulted': qs.filter(pdl_profile__sex='F', consult_count__gt=0).count(),
+        'total_pdl_rows':        qs.count(),
+        'total_consults':        qs.filter(consult_count__gt=0).count(),
+        'male_consulted':        qs.filter(pdl_profile__sex='M', consult_count__gt=0).count(),
+        'female_consulted':      qs.filter(pdl_profile__sex='F', consult_count__gt=0).count(),
+        'active_health_cases':   qs.filter(active_health_count__gt=0).count(),
     }
 
     page_obj = Paginator(qs, 10).get_page(request.GET.get('page'))
@@ -255,7 +261,7 @@ def health_condition_add(request, pdl_id):
         condition    = request.POST.get('condition')
         date_diag    = request.POST.get('date_diagnosed') or None
         notes        = request.POST.get('notes', '')
-        is_active    = request.POST.get('is_active') == 'on'
+        status       = request.POST.get('status', 'active')
         if not condition:
             messages.error(request, "Condition is required.")
             return redirect('pdl:pdl_profile', username=pdl.username.username)
@@ -268,7 +274,8 @@ def health_condition_add(request, pdl_id):
             condition=condition,
             date_diagnosed=date_diag,
             notes=notes,
-            is_active=is_active,
+            status=status,
+            is_active=(status == 'active'),
             recorded_by=request.user,
         )
         messages.success(request, "Health condition recorded.")
@@ -283,7 +290,8 @@ def health_condition_edit(request, pk):
         hc.condition      = request.POST.get('condition', hc.condition)
         hc.date_diagnosed = request.POST.get('date_diagnosed') or None
         hc.notes          = request.POST.get('notes', '')
-        hc.is_active      = request.POST.get('is_active') == 'on'
+        hc.status         = request.POST.get('status', 'active')
+        hc.is_active      = (hc.status == 'active')
         hc.save()
         messages.success(request, "Health condition updated.")
     return redirect('pdl:pdl_profile', username=pdl.username.username)

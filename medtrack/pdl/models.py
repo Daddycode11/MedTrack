@@ -198,14 +198,21 @@ class HealthCondition(models.Model):
         ('OTHER',  'Other'),
     ]
 
-    pdl_profile   = models.ForeignKey(PDLProfile, on_delete=models.CASCADE, related_name='health_conditions')
-    condition     = models.CharField(max_length=10, choices=CONDITION_CHOICES)
+    STATUS_CHOICES = [
+        ('active',         'Active'),
+        ('under_treatment','Under Treatment'),
+        ('recovered',      'Recovered'),
+    ]
+
+    pdl_profile    = models.ForeignKey(PDLProfile, on_delete=models.CASCADE, related_name='health_conditions')
+    condition      = models.CharField(max_length=10, choices=CONDITION_CHOICES)
     date_diagnosed = models.DateField(blank=True, null=True)
-    notes         = models.TextField(blank=True)
-    is_active     = models.BooleanField(default=True)
-    recorded_by   = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    created_at    = models.DateTimeField(auto_now_add=True)
-    updated_at    = models.DateTimeField(auto_now=True)
+    notes          = models.TextField(blank=True)
+    status         = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    is_active      = models.BooleanField(default=True)
+    recorded_by    = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at     = models.DateTimeField(auto_now_add=True)
+    updated_at     = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.pdl_profile} — {self.get_condition_display()}"

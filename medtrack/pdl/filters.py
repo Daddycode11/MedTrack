@@ -1,5 +1,5 @@
 import django_filters
-from .models import DetentionInstance, DetentionStatus, DetentionReason
+from .models import DetentionInstance, DetentionStatus, DetentionReason, HealthCondition
 
 class PDLFilter(django_filters.FilterSet):
     pdl_profile = django_filters.CharFilter(
@@ -15,7 +15,19 @@ class PDLFilter(django_filters.FilterSet):
         queryset=DetentionReason.objects.all(),
         label="Reason"
     )
+    health_condition = django_filters.ChoiceFilter(
+        choices=[('', '---------')] + HealthCondition.CONDITION_CHOICES,
+        field_name='pdl_profile__health_conditions__condition',
+        label="Condition Type",
+        empty_value='',
+    )
+    health_status = django_filters.ChoiceFilter(
+        choices=[('', '---------')] + HealthCondition.STATUS_CHOICES,
+        field_name='pdl_profile__health_conditions__status',
+        label="Health Status",
+        empty_value='',
+    )
 
     class Meta:
         model = DetentionInstance
-        fields = ['pdl_profile', 'detention_status', 'detention_reason']
+        fields = ['pdl_profile', 'detention_status', 'detention_reason', 'health_condition', 'health_status']
