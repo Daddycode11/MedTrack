@@ -19,13 +19,11 @@ class PDLFilter(django_filters.FilterSet):
         choices=[('', '---------')] + HealthCondition.CONDITION_CHOICES,
         field_name='pdl_profile__health_conditions__condition',
         label="Condition Type",
-        empty_value='',
     )
     health_status = django_filters.ChoiceFilter(
         choices=[('', '---------')] + HealthCondition.STATUS_CHOICES,
         field_name='pdl_profile__health_conditions__status',
         label="Health Status",
-        empty_value='',
     )
 
     class Meta:
